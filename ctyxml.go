@@ -215,10 +215,25 @@ func main() {
 	LoadCtyXml()
 
 	fmt.Println(CtyXmlData.Date)
-	fmt.Println(CtyXmlEntities)
-	fmt.Println(CtyXmlExceptions)
-	fmt.Println(CtyXmlPrefixes)
-	fmt.Println(CtyXmlInvalids)
-	fmt.Println(CtyXmlZoneExceptions)
+
+	for _, s := range CtyXmlEntities {
+		fmt.Println(s)
+	}
+
+	for _, s := range CtyXmlExceptions {
+		fmt.Println(s)
+	}
+
+	for _, s := range CtyXmlPrefixes {
+		fmt.Println(s)
+	}
+
+	for _, s := range CtyXmlInvalids {
+		fmt.Println(s)
+	}
+
+	for _, s := range CtyXmlZoneExceptions {
+		fmt.Println(s)
+	}
 
 }
