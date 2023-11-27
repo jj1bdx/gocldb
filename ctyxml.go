@@ -34,7 +34,7 @@ const (
 
 // Convert TimeString to time.Time
 func ConvertTimeString(ts TimeString) time.Time {
-	t, err := time.Parse(string(ts), ClublogTimeLayout)
+	t, err := time.Parse(ClublogTimeLayout, string(ts))
 	if err != nil {
 		log.Fatalf("ConvertTimeString() error: %v", err)
 	}
@@ -160,10 +160,10 @@ var CtyXmlPrefixes []PrefixesPrefix
 var CtyXmlInvalids []InvalidOperationsInvalid
 var CtyXmlZoneExceptions []ZoneExceptionsZoneException
 
-// Adif (uint16) is the map key
+// Prefix (string) is the map key
 type CLDEntity struct {
+	Adif           uint16
 	Name           string
-	Prefix         string
 	Deleted        bool
 	Cqz            uint8
 	Cont           string
@@ -191,18 +191,16 @@ type CLDException struct {
 
 // Prefix (string) is the map key
 type CLDPrefix struct {
-	Adif           uint16
-	Name           string
-	Deleted        bool
-	Cqz            uint8
-	Cont           io.StringWriter
-	Long           float64
-	Lat            float64
-	Start          time.Time
-	End            time.Time
-	Whitelist      bool
-	WhitelistStart time.Time
-	WhitelistEnd   time.Time
+	Record uint64
+	Entity string
+	Adif   uint16
+	Name   string
+	Cqz    uint8
+	Cont   string
+	Long   float64
+	Lat    float64
+	Start  time.Time
+	End    time.Time
 }
 
 // Call (string) is the map key
@@ -220,11 +218,13 @@ type CLDZoneException struct {
 	End    time.Time
 }
 
-var CLDMapEntity = make(map[uint16]CLDEntity, 400)
-var CLDMapException = make(map[string]CLDException, 40000)
-var CLDMapPrefix = make(map[string]CLDPrefix, 10000)
-var CLDMapInvalid = make(map[string]CLDInvalid, 10000)
-var CLDMapZoneException = make(map[string]CLDZoneException, 10000)
+// The following tables allow multiple struct entries per key
+// by using the slices
+var CLDMapEntity = make(map[string][]CLDEntity, 500)
+var CLDMapException = make(map[string][]CLDException, 50000)
+var CLDMapPrefix = make(map[string][]CLDPrefix, 10000)
+var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
+var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 
 // Locate cty.xml and open the file,
 // then read all the contents.
@@ -275,19 +275,133 @@ func LoadCtyXml() {
 	CtyXmlInvalids = CtyXmlData.InvalidOperations.Invalid
 	CtyXmlZoneExceptions = CtyXmlData.ZoneExceptions.ZoneException
 
+	// minimum and maximum time values
+	minTime, _ := time.Parse(ClublogTimeLayout, "0001-01-01T00:00:00+00:00")
+	maxTime, _ := time.Parse(ClublogTimeLayout, "9999-12-31T23:59:59+00:00")
+
 	for _, s := range CtyXmlEntities {
 		var d CLDEntity
 
-		adif := s.Adif
+		d.Adif = s.Adif
 		d.Name = s.Name
-		d.Prefix = s.Prefix
+		prefix := s.Prefix
 		d.Deleted = s.Deleted
 		d.Cqz = s.Cqz
 		d.Long = s.Long
 		d.Lat = s.Lat
+		if len(s.Start) > 0 {
+			d.Start = ConvertTimeString(s.Start)
+		} else {
+			d.Start = minTime
+		}
+		if len(s.End) > 0 {
+			d.End = ConvertTimeString(s.End)
+		} else {
+			d.End = maxTime
+		}
+		d.Whitelist = s.Whitelist
+		if len(s.WhitelistStart) > 0 {
+			d.WhitelistStart = ConvertTimeString(s.WhitelistStart)
+		} else {
+			d.WhitelistStart = minTime
+		}
+		if len(s.WhitelistEnd) > 0 {
+			d.WhitelistEnd = ConvertTimeString(s.WhitelistEnd)
+		} else {
+			d.WhitelistEnd = maxTime
+		}
 
+		CLDMapEntity[prefix] = append(CLDMapEntity[prefix], d)
 	}
 
+	for _, s := range CtyXmlExceptions {
+		var d CLDException
+
+		d.Record = s.Record
+		call := s.Call
+		d.Entity = s.Entity
+		d.Adif = s.Adif
+		d.Cqz = s.Cqz
+		d.Cont = s.Cont
+		d.Long = s.Long
+		d.Lat = s.Lat
+		if len(s.Start) > 0 {
+			d.Start = ConvertTimeString(s.Start)
+		} else {
+			d.Start = minTime
+		}
+		if len(s.End) > 0 {
+			d.End = ConvertTimeString(s.End)
+		} else {
+			d.End = maxTime
+		}
+
+		CLDMapException[call] = append(CLDMapException[call], d)
+	}
+
+	for _, s := range CtyXmlPrefixes {
+		var d CLDPrefix
+
+		d.Record = s.Record
+		call := s.Call
+		d.Entity = s.Entity
+		d.Adif = s.Adif
+		d.Cqz = s.Cqz
+		d.Cont = s.Cont
+		d.Long = s.Long
+		d.Lat = s.Lat
+		if len(s.Start) > 0 {
+			d.Start = ConvertTimeString(s.Start)
+		} else {
+			d.Start = minTime
+		}
+		if len(s.End) > 0 {
+			d.End = ConvertTimeString(s.End)
+		} else {
+			d.End = maxTime
+		}
+
+		CLDMapPrefix[call] = append(CLDMapPrefix[call], d)
+	}
+
+	for _, s := range CtyXmlInvalids {
+		var d CLDInvalid
+
+		d.Record = s.Record
+		call := s.Call
+		if len(s.Start) > 0 {
+			d.Start = ConvertTimeString(s.Start)
+		} else {
+			d.Start = minTime
+		}
+		if len(s.End) > 0 {
+			d.End = ConvertTimeString(s.End)
+		} else {
+			d.End = maxTime
+		}
+
+		CLDMapInvalid[call] = append(CLDMapInvalid[call], d)
+	}
+
+	for _, s := range CtyXmlZoneExceptions {
+		var d CLDZoneException
+
+		d.Record = s.Record
+		call := s.Call
+		d.Zone = s.Zone
+		if len(s.Start) > 0 {
+			d.Start = ConvertTimeString(s.Start)
+		} else {
+			d.Start = minTime
+		}
+		if len(s.End) > 0 {
+			d.End = ConvertTimeString(s.End)
+		} else {
+			d.End = maxTime
+		}
+
+		CLDMapZoneException[call] = append(CLDMapZoneException[call], d)
+	}
 }
 
 // main program for testing loading cty.xml
@@ -298,24 +412,64 @@ func main() {
 
 	fmt.Println(CtyXmlData.Date)
 
-	for _, s := range CtyXmlEntities {
-		fmt.Println(s)
-	}
+	var sl int
 
-	for _, s := range CtyXmlExceptions {
-		fmt.Println(s)
+	fmt.Println("=== CLDMapEntity:", len(CLDMapEntity))
+	sl = 0
+	for k, s := range CLDMapEntity {
+		fmt.Println(k, s)
+		l := len(s)
+		if l > sl {
+			sl = l
+		}
+		if l > 1 {
+			fmt.Println("==== CLDMapEntity slice length:", l)
+		}
 	}
+	fmt.Println("=== CLDMapEntity max slice length:", sl)
 
-	for _, s := range CtyXmlPrefixes {
-		fmt.Println(s)
+	fmt.Println("=== CLDMapException:", len(CLDMapException))
+	sl = 0
+	for k, s := range CLDMapException {
+		fmt.Println(k, s)
+		l := len(s)
+		if l > sl {
+			sl = l
+		}
 	}
+	fmt.Println("=== CLDMapException max slice length:", sl)
 
-	for _, s := range CtyXmlInvalids {
-		fmt.Println(s)
+	fmt.Println("=== CLDMapPrefix:", len(CLDMapPrefix))
+	sl = 0
+	for k, s := range CLDMapPrefix {
+		fmt.Println(k, s)
+		l := len(s)
+		if l > sl {
+			sl = l
+		}
 	}
+	fmt.Println("=== CLDMapPrefix max slice length:", sl)
 
-	for _, s := range CtyXmlZoneExceptions {
-		fmt.Println(s)
+	fmt.Println("=== CLDMapInvalid:", len(CLDMapInvalid))
+	sl = 0
+	for k, s := range CLDMapInvalid {
+		fmt.Println(k, s)
+		l := len(s)
+		if l > sl {
+			sl = l
+		}
 	}
+	fmt.Println("=== CLDMapInvalid max slice length:", sl)
+
+	fmt.Println("=== CLDMapZoneException:", len(CLDMapZoneException))
+	sl = 0
+	for k, s := range CLDMapZoneException {
+		fmt.Println(k, s)
+		l := len(s)
+		if l > sl {
+			sl = l
+		}
+	}
+	fmt.Println("=== CLDMapZoneException max slice length:", sl)
 
 }
