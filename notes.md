@@ -1,5 +1,11 @@
 # Development notes
 
+## Software rules of Club Log
+
+* [Mapping of portable callsigns](https://clublog.freshdesk.com/support/solutions/articles/3000065656-mapping-of-portable-callsigns)
+* [Mapping of KG4 Calls](https://clublog.freshdesk.com/support/solutions/articles/3000065658-mapping-of-kg4-calls)
+* [List of other rules](https://clublog.freshdesk.com/support/solutions/folders/3000012296)
+
 ## Aeronautical/Maritime Mobile rules
 
 * AM/whatever -> AERONAUTICAL MOBILE
