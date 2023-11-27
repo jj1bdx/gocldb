@@ -8,12 +8,10 @@
 
 // Time string is represented as TimeString instead of string
 
-// package gocldb
-package main
+package gocldb
 
 import (
 	"encoding/xml"
-	"fmt"
 	// "fmt" // for debug only
 	"io"
 	"log"
@@ -447,83 +445,4 @@ func LoadCtyXml() {
 
 		CLDMapZoneException[call] = append(CLDMapZoneException[call], d)
 	}
-}
-
-// main program for testing loading cty.xml
-
-func main() {
-
-	LoadCtyXml()
-
-	fmt.Println(CtyXmlData.Date)
-
-	var sl int
-
-	fmt.Println("=== CLDMapEntity:", len(CLDMapEntity))
-	sl = 0
-	for k, s := range CLDMapEntity {
-		fmt.Printf("%s: %#v\n", k, s)
-		l := len(s)
-		if l > sl {
-			sl = l
-		}
-		if l > 1 {
-			fmt.Println("==== CLDMapEntity slice length:", l)
-		}
-	}
-	fmt.Println("=== CLDMapEntity max slice length:", sl)
-
-	fmt.Println("=== CLDMapEntityByAdif:", len(CLDMapEntityByAdif))
-	sl = 0
-	for k, s := range CLDMapEntityByAdif {
-		fmt.Printf("%d (%#x): %#v\n", k, k, s)
-	}
-
-	fmt.Println("=== CLDMapException:", len(CLDMapException))
-	sl = 0
-	for k, s := range CLDMapException {
-		fmt.Printf("%s: %#v\n", k, s)
-		l := len(s)
-		if l > sl {
-			sl = l
-		}
-		if l > 100 {
-			fmt.Println("==== CLDMapException slice length:", l)
-		}
-	}
-	fmt.Println("=== CLDMapException max slice length:", sl)
-
-	fmt.Println("=== CLDMapPrefix:", len(CLDMapPrefix))
-	sl = 0
-	for k, s := range CLDMapPrefix {
-		fmt.Printf("%s: %#v\n", k, s)
-		l := len(s)
-		if l > sl {
-			sl = l
-		}
-	}
-	fmt.Println("=== CLDMapPrefix max slice length:", sl)
-
-	fmt.Println("=== CLDMapInvalid:", len(CLDMapInvalid))
-	sl = 0
-	for k, s := range CLDMapInvalid {
-		fmt.Printf("%s: %#v\n", k, s)
-		l := len(s)
-		if l > sl {
-			sl = l
-		}
-	}
-	fmt.Println("=== CLDMapInvalid max slice length:", sl)
-
-	fmt.Println("=== CLDMapZoneException:", len(CLDMapZoneException))
-	sl = 0
-	for k, s := range CLDMapZoneException {
-		fmt.Printf("%s: %#v\n", k, s)
-		l := len(s)
-		if l > sl {
-			sl = l
-		}
-	}
-	fmt.Println("=== CLDMapZoneException max slice length:", sl)
-
 }
