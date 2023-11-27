@@ -83,4 +83,11 @@ func main() {
 	}
 	fmt.Println("=== CLDMapZoneException max slice length:", sl)
 
+	fmt.Println("=== List of CLDMapPrefix")
+	sl = 0
+	for k, _ := range gocldb.CLDMapPrefix {
+		fmt.Printf("%s\n", k)
+	}
+	fmt.Println("=== End of List of CLDMapPrefix")
+
 }
