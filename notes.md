@@ -13,6 +13,10 @@
 * whatever/MM -> MARITIME MOBILE
 * whatever/MM[0-9] -> MARITIME MOBILE
 
+## Maximum length of a full callsign
+
+The maximum length of a full callsign is sixteen (16).
+
 ## Prefix testing
 
 * Choose the longest match with the prefix database
