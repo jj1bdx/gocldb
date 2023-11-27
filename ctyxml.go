@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 )
 
 // Time String (of RFC3359 with timezone)
@@ -31,7 +32,16 @@ const (
 	ClublogTimeLayout = "2006-01-02T15:04:05-07:00"
 )
 
-// Element
+// Convert TimeString to time.Time
+func ConvertTimeString(ts TimeString) time.Time {
+	t, err := time.Parse(string(ts), ClublogTimeLayout)
+	if err != nil {
+		log.Fatalf("ConvertTimeString() error: %v", err)
+	}
+	return t
+}
+
+// XML nested elements begins here
 type Clublog struct {
 	XMLName xml.Name `xml:"clublog"`
 	Date    string   `xml:"date,attr"`
@@ -43,7 +53,6 @@ type Clublog struct {
 	ZoneExceptions    ClublogZoneExceptions    `xml:"zone_exceptions"`
 }
 
-// Element
 type EntitiesEntity struct {
 	XMLName xml.Name `xml:"entity"`
 
@@ -62,14 +71,12 @@ type EntitiesEntity struct {
 	WhitelistEnd   TimeString `xml:"whitelist_end"`
 }
 
-// Element
 type ClublogEntities struct {
 	XMLName xml.Name `xml:"entities"`
 
 	Entity []EntitiesEntity `xml:",any"`
 }
 
-// Element
 type ExceptionsException struct {
 	XMLName xml.Name `xml:"exception"`
 
@@ -85,14 +92,12 @@ type ExceptionsException struct {
 	End    TimeString `xml:"end"`
 }
 
-// Element
 type ClublogExceptions struct {
 	XMLName xml.Name `xml:"exceptions"`
 
 	Exception []ExceptionsException `xml:",any"`
 }
 
-// Element
 type PrefixesPrefix struct {
 	XMLName xml.Name `xml:"prefix"`
 
@@ -108,14 +113,12 @@ type PrefixesPrefix struct {
 	End    TimeString `xml:"end"`
 }
 
-// Element
 type ClublogPrefixes struct {
 	XMLName xml.Name `xml:"prefixes"`
 
 	Prefix []PrefixesPrefix `xml:",any"`
 }
 
-// Element
 type InvalidOperationsInvalid struct {
 	XMLName xml.Name `xml:"invalid"`
 
@@ -125,14 +128,12 @@ type InvalidOperationsInvalid struct {
 	End    TimeString `xml:"end"`
 }
 
-// Element
 type ClublogInvalidOperations struct {
 	XMLName xml.Name `xml:"invalid_operations"`
 
 	Invalid []InvalidOperationsInvalid `xml:",any"`
 }
 
-// Element
 type ZoneExceptionsZoneException struct {
 	XMLName xml.Name `xml:"zone_exception"`
 
@@ -143,19 +144,87 @@ type ZoneExceptionsZoneException struct {
 	End    TimeString `xml:"end"`
 }
 
-// Element
 type ClublogZoneExceptions struct {
 	XMLName xml.Name `xml:"zone_exceptions"`
 
 	ZoneException []ZoneExceptionsZoneException `xml:",any"`
 }
 
+// XML nested elements ends here
+
+// Global variables for handling raw XML-based structs
 var CtyXmlData Clublog
 var CtyXmlEntities []EntitiesEntity
 var CtyXmlExceptions []ExceptionsException
 var CtyXmlPrefixes []PrefixesPrefix
 var CtyXmlInvalids []InvalidOperationsInvalid
 var CtyXmlZoneExceptions []ZoneExceptionsZoneException
+
+// Adif (uint16) is the map key
+type CLDEntity struct {
+	Name           string
+	Prefix         string
+	Deleted        bool
+	Cqz            uint8
+	Cont           string
+	Long           float64
+	Lat            float64
+	Start          time.Time
+	End            time.Time
+	Whitelist      bool
+	WhitelistStart time.Time
+	WhitelistEnd   time.Time
+}
+
+// Call (string) is the map key
+type CLDException struct {
+	Record uint64
+	Entity string
+	Adif   uint16
+	Cqz    uint8
+	Cont   string
+	Long   float64
+	Lat    float64
+	Start  time.Time
+	End    time.Time
+}
+
+// Prefix (string) is the map key
+type CLDPrefix struct {
+	Adif           uint16
+	Name           string
+	Deleted        bool
+	Cqz            uint8
+	Cont           io.StringWriter
+	Long           float64
+	Lat            float64
+	Start          time.Time
+	End            time.Time
+	Whitelist      bool
+	WhitelistStart time.Time
+	WhitelistEnd   time.Time
+}
+
+// Call (string) is the map key
+type CLDInvalid struct {
+	Record uint64
+	Start  time.Time
+	End    time.Time
+}
+
+// Call (string) is the map key
+type CLDZoneException struct {
+	Record uint64
+	Zone   uint8
+	Start  time.Time
+	End    time.Time
+}
+
+var CLDMapEntity = make(map[uint16]CLDEntity, 400)
+var CLDMapException = make(map[string]CLDException, 40000)
+var CLDMapPrefix = make(map[string]CLDPrefix, 10000)
+var CLDMapInvalid = make(map[string]CLDInvalid, 10000)
+var CLDMapZoneException = make(map[string]CLDZoneException, 10000)
 
 // Locate cty.xml and open the file,
 // then read all the contents.
@@ -206,9 +275,22 @@ func LoadCtyXml() {
 	CtyXmlInvalids = CtyXmlData.InvalidOperations.Invalid
 	CtyXmlZoneExceptions = CtyXmlData.ZoneExceptions.ZoneException
 
+	for _, s := range CtyXmlEntities {
+		var d CLDEntity
+
+		adif := s.Adif
+		d.Name = s.Name
+		d.Prefix = s.Prefix
+		d.Deleted = s.Deleted
+		d.Cqz = s.Cqz
+		d.Long = s.Long
+		d.Lat = s.Lat
+
+	}
+
 }
 
-// mail program for testing loading cty.xml
+// main program for testing loading cty.xml
 
 func main() {
 
