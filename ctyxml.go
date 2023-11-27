@@ -462,7 +462,7 @@ func main() {
 	fmt.Println("=== CLDMapEntity:", len(CLDMapEntity))
 	sl = 0
 	for k, s := range CLDMapEntity {
-		fmt.Println(k, s)
+		fmt.Printf("%s: %#v\n", k, s)
 		l := len(s)
 		if l > sl {
 			sl = l
@@ -476,13 +476,13 @@ func main() {
 	fmt.Println("=== CLDMapEntityByAdif:", len(CLDMapEntityByAdif))
 	sl = 0
 	for k, s := range CLDMapEntityByAdif {
-		fmt.Println(k, s)
+		fmt.Printf("%d (%#x): %#v\n", k, k, s)
 	}
 
 	fmt.Println("=== CLDMapException:", len(CLDMapException))
 	sl = 0
 	for k, s := range CLDMapException {
-		fmt.Println(k, s)
+		fmt.Printf("%s: %#v\n", k, s)
 		l := len(s)
 		if l > sl {
 			sl = l
@@ -496,7 +496,7 @@ func main() {
 	fmt.Println("=== CLDMapPrefix:", len(CLDMapPrefix))
 	sl = 0
 	for k, s := range CLDMapPrefix {
-		fmt.Println(k, s)
+		fmt.Printf("%s: %#v\n", k, s)
 		l := len(s)
 		if l > sl {
 			sl = l
@@ -507,7 +507,7 @@ func main() {
 	fmt.Println("=== CLDMapInvalid:", len(CLDMapInvalid))
 	sl = 0
 	for k, s := range CLDMapInvalid {
-		fmt.Println(k, s)
+		fmt.Printf("%s: %#v\n", k, s)
 		l := len(s)
 		if l > sl {
 			sl = l
@@ -518,7 +518,7 @@ func main() {
 	fmt.Println("=== CLDMapZoneException:", len(CLDMapZoneException))
 	sl = 0
 	for k, s := range CLDMapZoneException {
-		fmt.Println(k, s)
+		fmt.Printf("%s: %#v\n", k, s)
 		l := len(s)
 		if l > sl {
 			sl = l
