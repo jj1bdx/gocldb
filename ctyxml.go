@@ -203,12 +203,11 @@ type CLDException struct {
 	End    time.Time
 }
 
-// Prefix (string) is the map key
+// Call (string) is the map key
 type CLDPrefix struct {
 	Record uint64
 	Entity string
 	Adif   uint16
-	Name   string
 	Cqz    uint8
 	Cont   string
 	Long   float64
