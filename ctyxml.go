@@ -176,6 +176,22 @@ type CLDEntity struct {
 	WhitelistEnd   time.Time
 }
 
+// Adif (uint16) is the map key
+type CLDEntityByAdif struct {
+	Name           string
+	Prefix         string
+	Deleted        bool
+	Cqz            uint8
+	Cont           string
+	Long           float64
+	Lat            float64
+	Start          time.Time
+	End            time.Time
+	Whitelist      bool
+	WhitelistStart time.Time
+	WhitelistEnd   time.Time
+}
+
 // Call (string) is the map key
 type CLDException struct {
 	Record uint64
@@ -218,12 +234,23 @@ type CLDZoneException struct {
 	End    time.Time
 }
 
-// The following tables allow multiple struct entries per key
-// by using the slices
+// Entity by prefix, returning a slice
 var CLDMapEntity = make(map[string][]CLDEntity, 500)
+
+// Entity by adif (Entity code)
+// Each entity code maps to only one Entity
+var CLDMapEntityByAdif = make(map[uint16]CLDEntityByAdif, 500)
+
+// Entity Exception status by callsign, returning a slice
 var CLDMapException = make(map[string][]CLDException, 50000)
+
+// Entity by longest-match prefixes, returning a slice
 var CLDMapPrefix = make(map[string][]CLDPrefix, 10000)
+
+// DXCC-invalid status by callsign, returning a slice
 var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
+
+// Zone exception by callsign, returning a slice
 var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 
 // Locate cty.xml and open the file,
@@ -281,10 +308,13 @@ func LoadCtyXml() {
 
 	for _, s := range CtyXmlEntities {
 		var d CLDEntity
+		var da CLDEntityByAdif
 
-		d.Adif = s.Adif
-		d.Name = s.Name
+		adif := s.Adif
 		prefix := s.Prefix
+
+		d.Adif = adif
+		d.Name = s.Name
 		d.Deleted = s.Deleted
 		d.Cqz = s.Cqz
 		d.Long = s.Long
@@ -312,6 +342,21 @@ func LoadCtyXml() {
 		}
 
 		CLDMapEntity[prefix] = append(CLDMapEntity[prefix], d)
+
+		da.Name = d.Name
+		da.Prefix = prefix
+		da.Deleted = d.Deleted
+		da.Cqz = d.Cqz
+		da.Long = d.Long
+		da.Lat = d.Lat
+		da.Start = d.Start
+		da.End = d.End
+		da.Whitelist = d.Whitelist
+		da.WhitelistStart = d.WhitelistStart
+		da.WhitelistEnd = d.WhitelistEnd
+
+		// Here simple assignment, NOT appending
+		CLDMapEntityByAdif[adif] = da
 	}
 
 	for _, s := range CtyXmlExceptions {
@@ -428,6 +473,12 @@ func main() {
 	}
 	fmt.Println("=== CLDMapEntity max slice length:", sl)
 
+	fmt.Println("=== CLDMapEntityByAdif:", len(CLDMapEntityByAdif))
+	sl = 0
+	for k, s := range CLDMapEntityByAdif {
+		fmt.Println(k, s)
+	}
+
 	fmt.Println("=== CLDMapException:", len(CLDMapException))
 	sl = 0
 	for k, s := range CLDMapException {
@@ -435,6 +486,9 @@ func main() {
 		l := len(s)
 		if l > sl {
 			sl = l
+		}
+		if l > 100 {
+			fmt.Println("==== CLDMapException slice length:", l)
 		}
 	}
 	fmt.Println("=== CLDMapException max slice length:", sl)
