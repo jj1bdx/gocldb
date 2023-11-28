@@ -44,6 +44,7 @@
 * Check Aeronautical/Maritime Mobile prefix/symbol
   - If found, set the result and exit
 * If the remaining callsign contains one (1) slash
+  - Apply special prefix rules (TBD)
   - Remove designators to ignore (apply designator removal rules)
     - Reject if the result string length is zero
   - Apply the 1-slash callsign rules then exit (TBD)
