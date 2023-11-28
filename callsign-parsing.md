@@ -17,11 +17,9 @@
   - Reject as an invalid callsign if failed
 * Parse and split parts with slashes (/)
   - Reject if the parts are four (4) or more (i.e., three (3) or more slashes)
-* Remove designators to ignore (apply designator removal rules)
-  - Reject if the result string length is zero
 * Check if the callsign is in the Exception (CLDMapException) table
   - If the callsign entry exists, check the contact time
-    - If the time is matched, use and set the DXCC/CQZ info
+    - If the time is matched, use and set the DXCC/CQZ info, as whitelisted
     - If the time is not matched, repeat checking all time entries
     - If no match is found, do nothing
 * Check if the callsign is in the ZoneException (CLDMapZoneException) table
@@ -33,6 +31,7 @@
 * If the remaining callsign contains zero (0) slash
   - Check matching with `([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)`
     - So that a callsign will be split into prefix and suffix
+    - If failed, the callsign is invalid
   - Check prefix for determining DXCC/CQZ info
     - Use the longest prefix match in the Prefix (CLDPrefix) table
     - If the prefix match exists, check the contact time
@@ -45,9 +44,19 @@
 * Check Aeronautical/Maritime Mobile prefix/symbol
   - If found, set the result and exit
 * If the remaining callsign contains one (1) slash
-  - Apply the 1-slash callsign rules then exit
+  - Remove designators to ignore (apply designator removal rules)
+    - Reject if the result string length is zero
+  - Apply the 1-slash callsign rules then exit (TBD)
 * If the remaining callsign contains two (2) slashes
-  - Apply the 2-slash callsign rules and exit
+  - Apply split-prefix rules (TBD)
+  - Remove designators to ignore (apply designator removal rules)
+    - Reject if the result string length is zero
+  - Apply the 2-slash callsign rules then exit (TBD)
+
+### Whitelisting check required for DXCC/CQZ info check
+
+* Check whitelisting status on the Entity (CLDMapEntity) table
+  - Whitelisted callsigns only reside in the Exception (CLDMapException) table
 
 ## Designator removal rules
 
@@ -116,7 +125,7 @@ The maximum length of a full callsign is sixteen (16).
 * callsign/callsign
 * prefix/callsign
 * callsign/designator or a prefix
-* not-even-a-prefix/not-even-a-prefix
+* not-even-a-prefix/not-even-a-prefix: invalid
 
 #### Length rule for two full callsigns
 
