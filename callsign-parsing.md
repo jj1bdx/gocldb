@@ -27,7 +27,7 @@
     - If the time is matched, use the info and update the DXCC/CQZ info
     - If the time is not matched, repeat checking all time entries
     - If no match is found, do nothing
-* If DXCC/CQZ info is set, exit
+* If DXCC/CQZ info is set, check whitelisting and exit
 * If the remaining callsign contains zero (0) slash
   - Check matching with `([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)`
     - So that a callsign will be split into prefix and suffix
@@ -35,7 +35,7 @@
   - Check prefix for determining DXCC/CQZ info
     - Use the longest prefix match in the Prefix (CLDPrefix) table
     - If the prefix match exists, check the contact time
-      - If the time is matched, use and set the DXCC/CQZ info, then exit
+      - If the time is matched, use and set the DXCC/CQZ info, then check whitelisting and exit
       - If the time is not matched, repeat checking all time entries
       - If no match is found, do nothing
     - If no match is found, use a shorter prefix match, then repeat until no match
@@ -43,13 +43,14 @@
 * (Here the remaining callsign contains at least one (1) slash)
 * Check Aeronautical/Maritime Mobile prefix/symbol
   - If found, set the result and exit
+* Apply special prefix rules here (TBD)
+  - e.g., FO/M, 3D2/R, 3D2/C, etc.
+  - If matched and resolved, set the result, check whitelisting, and exit
 * If the remaining callsign contains one (1) slash
-  - Apply special prefix rules (TBD)
   - Remove designators to ignore (apply designator removal rules)
     - Reject if the result string length is zero
   - Apply the 1-slash callsign rules then exit (TBD)
 * If the remaining callsign contains two (2) slashes
-  - Apply split-prefix rules (TBD)
   - Remove designators to ignore (apply designator removal rules)
     - Reject if the result string length is zero
   - Apply the 2-slash callsign rules then exit (TBD)
