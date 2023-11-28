@@ -45,6 +45,15 @@
   - If found, set the result and exit
 * Apply special prefix rules here (TBD)
   - e.g., FO/M, 3D2/R, 3D2/C, etc.
+  - FO/M (Marquesas) examples:
+    - FO/M/JJ1BDX and FO/JJ1BDX/M are both Marquesas in Club Log
+    - OTOH, JJ1BDX/FO/M is French Polynesia in Club Log (as JJ1BDX/FO)
+      - JJ1BDX/FO/M should also be treated as Marquesas
+  - 3D2/C (Conway Reef) examples:
+    - 3D2BDX/C is Conway Reef
+    - 3D2/C/JJ1BDX and 3D2/JJ1BDX/C are Conway Reef in Club Log
+    - OTOH, JJ1BDX/3D2/C is Fiji in Club Log (as JJ1BDX/3D2)
+      - JJ1BDX/3D2/C should also be treated as Conway Reef
   - If matched and resolved, set the result, check whitelisting, and exit
 * If the remaining callsign contains one (1) slash
   - Remove designators to ignore (apply designator removal rules)
