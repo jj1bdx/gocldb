@@ -59,8 +59,8 @@ func main() {
 			}
 		}
 	} else {
-		// Use current time
-		qsotime = time.Now()
+		// Use current time in UTC
+		qsotime = time.Now().UTC()
 	}
 
 	// Look up the database
@@ -76,8 +76,8 @@ func main() {
 	fmt.Printf("Prefix:         %s\n", result.Prefix)
 	fmt.Printf("CQ Zone:        %d\n", result.Cqz)
 	fmt.Printf("Continent:      %s\n", result.Cont)
-	fmt.Printf("Latitude:       %f\n", result.Long)
-	fmt.Printf("Longitude:      %f\n", result.Lat)
+	fmt.Printf("Latitude:       %.2f\n", result.Long)
+	fmt.Printf("Longitude:      %.2f\n", result.Lat)
 	fmt.Printf("\n")
 
 	return
