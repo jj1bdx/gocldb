@@ -44,6 +44,9 @@
       - If the time is not matched, repeat checking all time entries
       - If no match is found, do nothing
     - If no match is found, use a shorter prefix match, then repeat until no match
+      - You need to scan and list all the possible prefixes
+      - and look them up from the longer to the shorter ones
+      - to find the longest matched prefix with the time range matching
     - If no prefix in the prefix table is matched, the callsign is invalid
 
 ### Zero-slash post-processing

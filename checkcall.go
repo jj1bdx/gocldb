@@ -155,6 +155,12 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 // Check the longest prefix match of a given prefix in CLDMapPrefix
 // Returns applicable prefix (if "" then not found)
 // If bool is true, e match exists; if false, did not matched
+
+// TODO:
+// You need to scan and list all the possible prefixes
+// and look them up from the longer to the shorter ones
+// to find the longest matched prefix with the time range matching
+
 func SearchPrefixMap(prefix string) string {
 	result := ""
 	ml := 0
