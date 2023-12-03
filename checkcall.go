@@ -3,8 +3,8 @@
 package gocldb
 
 import (
-	// "fmt" // for debug only
 	"errors"
+	"fmt" // for debug only
 	"regexp"
 	// "strconv"
 	"strings"
@@ -88,7 +88,6 @@ func InitCLDCheckResult() CLDCheckResult {
 // Errors
 var ErrMalformedCallsign = errors.New("Malformed callsign")
 var ErrNotReached = errors.New("Jumped into unreachable code")
-var ErrTooManySlashes = errors.New("Too many slashes")
 
 // Check if a given time is in the time range
 // between lower and upper (inclusive)
@@ -208,81 +207,8 @@ func SplitCallsign(call string) (string, string) {
 	return matches[1], matches[2]
 }
 
-// Parse a callsign and time
-// with given callsign and contact/QSO time
-// Note well: callsign must be uppercased
-func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
-	// Result value
-	result := InitCLDCheckResult()
-
-	// Check if callsign consists of
-	// digits, capital letters, and slashes only
-	// from length 1 to 16 characters
-	regcallcheck := regexp.MustCompile(`^[0-9|A-Z|\/]{1,16}$`)
-	// If not, return with malformed callsign error
-	if !(regcallcheck.MatchString(call)) {
-		return result, ErrMalformedCallsign
-	}
-
-	// Check CLDMapInvalid here
-	ir, exists := InInvalidMap(call, qsotime)
-	// If exists, return as an DXCC-invalid callsign
-	if exists {
-		result.Adif = AdifInvalid
-		result.Name = NameInvalid
-		result.Prefix = ""
-		result.Cqz = 0
-		result.Cont = ""
-		result.Long = 0.0
-		result.Lat = 0.0
-		result.Deleted = false
-		result.BlockedByWhitelist = false
-		result.Invalid = true
-		result.HasRecordInvalid = true
-		result.RecordInvalid = ir
-
-		return result, nil
-	}
-
-	// Split callsign separated by "/" into parts
-	callparts := strings.Split(call, "/")
-	// Check how many parts in the callparts
-	partlength := len(callparts)
-	// If partlength is more than 4, return with too many slashes error
-	if partlength > 4 {
-		return result, ErrTooManySlashes
-	}
-
-	// If the callsign does not contain slashes
-	// branch to another function
-	if (partlength == 1) && (callparts[0] == "") {
-		return CheckCallsign0(call, qsotime)
-	}
-
-	// If a zero-length string in a split part of a callsign is found,
-	// treat it as malformed and exit
-	for _, s := range callparts {
-		if len(s) == 0 {
-			return result, ErrMalformedCallsign
-		}
-	}
-
-	// TODO: add split-prefix processing here
-
-	// Remove Distraction Suffixes
-	callparts = RemoveDistractionSuffixes(callparts)
-
-	// TODO: more processing of callsign with slashes
-
-	// NOTREACHED
-	return result, ErrNotReached
-}
-
-// Parse a callsign (assuming without slash) and time
-// with given callsign and contact/QSO time
-// Note well: callsign must be uppercased
-func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { // Result value
-	result := InitCLDCheckResult()
+func CheckException(call string, qsotime time.Time, oldresult CLDCheckResult) (CLDCheckResult, bool) { // Result value
+	result := oldresult
 
 	// Check CLDMapException here
 	er, exists := InExceptionMap(call, qsotime)
@@ -299,6 +225,12 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 		result.HasRecordException = true
 		result.RecordException = er
 	}
+	return result, exists
+}
+
+func CheckZoneException(call string, qsotime time.Time, oldresult CLDCheckResult) (CLDCheckResult, bool) {
+	// Result value
+	result := oldresult
 
 	// Check CLDZoneException here
 	zer, exists := InZoneExceptionMap(call, qsotime)
@@ -311,5 +243,108 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 	// TODO: extract prefix from a callsign
 
 	// NOTREACHED
-	return result, ErrNotReached
+	return result, exists
+}
+
+// Parse a callsign and time
+// with given callsign and contact/QSO time
+// Note well: callsign must be uppercased
+func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
+	// Result value
+	result1 := InitCLDCheckResult()
+
+	// Check if callsign consists of
+	// digits, capital letters, and slashes only
+	// from length 1 to 16 characters
+	regcallcheck := regexp.MustCompile(`^[0-9|A-Z|\/]{1,16}$`)
+	// If not, return with malformed callsign error
+	if !(regcallcheck.MatchString(call)) {
+		return result1, ErrMalformedCallsign
+	}
+
+	// Check CLDMapInvalid here
+	ir, exists := InInvalidMap(call, qsotime)
+	// If exists, return as an DXCC-invalid callsign
+	if exists {
+		result1.Adif = AdifInvalid
+		result1.Name = NameInvalid
+		result1.Prefix = ""
+		result1.Cqz = 0
+		result1.Cont = ""
+		result1.Long = 0.0
+		result1.Lat = 0.0
+		result1.Deleted = false
+		result1.BlockedByWhitelist = false
+		result1.Invalid = true
+		result1.HasRecordInvalid = true
+		result1.RecordInvalid = ir
+
+		return result1, nil
+	}
+
+	// Split callsign separated by "/" into parts
+	callparts := strings.Split(call, "/")
+	// Check how many parts in the callparts
+	partlength := len(callparts)
+
+	fmt.Printf("partlength: %d, callparts: %#v\n", partlength, callparts)
+
+	// If the callsign does not contain slashes
+	// branch to another function
+	if partlength == 1 {
+		return CheckCallsign0(call, qsotime)
+	}
+
+	// If a zero-length string in a split part of a callsign is found,
+	// treat it as malformed and exit
+	for _, s := range callparts {
+		if len(s) == 0 {
+			return result1, ErrMalformedCallsign
+		}
+	}
+
+	// CLDMapException and CLDMapZoneException check
+	result2, found2 := CheckException(call, qsotime, result1)
+	result3, found3 := CheckZoneException(call, qsotime, result2)
+	if found2 || found3 {
+		return result3, nil
+	}
+
+	// If KL7/JJ1BDX form, also check with JJ1BDX/KL7
+	// for CLDMapException and CLDMapZoneException
+	if partlength == 2 {
+		callswapped := callparts[1] + "/" + callparts[0]
+
+		result31, found31 := CheckException(callswapped, qsotime, result3)
+		result32, found32 := CheckZoneException(callswapped, qsotime, result31)
+		if found31 || found32 {
+			return result32, nil
+		}
+	}
+
+	// TODO: addk-prefix processing here
+
+	// Remove Distraction Suffixes
+	callparts = RemoveDistractionSuffixes(callparts)
+
+	// TODO: more processing of callsign with slashes
+
+	// NOTREACHED
+	return result3, ErrNotReached
+}
+
+// Parse a callsign (assuming without slash) and time
+// with given callsign and contact/QSO time
+// Note well: callsign must be uppercased
+
+func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { // Result value
+	result1 := InitCLDCheckResult()
+
+	result2, _ := CheckException(call, qsotime, result1)
+	result3, _ := CheckZoneException(call, qsotime, result2)
+
+	// TODO: extract prefix from a callsign
+
+	// NOTREACHED
+	return result3, nil
 }
