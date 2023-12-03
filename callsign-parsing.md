@@ -32,11 +32,6 @@
     - If the time is matched, use and set the DXCC/CQZ info, as whitelisted
     - If the time is not matched, repeat checking all time entries
     - If no match is found, do nothing
-* Check if the callsign is in the ZoneException (CLDMapZoneException) table
- - If the callsign entry exists, check the contact time
-    - If the time is matched, use the info and update the DXCC/CQZ info
-    - If the time is not matched, repeat checking all time entries
-    - If no match is found, do nothing
 * If DXCC/CQZ info is set, check whitelisting and exit
 * If the remaining callsign contains zero (0) slash
   - Check matching with `([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)`
@@ -50,6 +45,15 @@
       - If no match is found, do nothing
     - If no match is found, use a shorter prefix match, then repeat until no match
     - If no prefix in the prefix table is matched, the callsign is invalid
+
+### Zero-slash post-processing
+
+* Check if the callsign is in the ZoneException (CLDMapZoneException) table
+ - If the callsign entry exists, check the contact time
+    - If the time is matched, use the info and update the DXCC/CQZ info
+    - If the time is not matched, repeat checking all time entries
+    - If no match is found, do nothing
+* Do the whitelisting check here
 
 ### One-or-more-slash callsign processing
 
