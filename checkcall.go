@@ -170,8 +170,11 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	}
 	p := l - 1
 	s := callparts[p]
+	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s ", p, s)
+
 	if DistractionSuffixes[s] {
-		callparts = callparts[:(p - 1)]
+		callparts = callparts[:p]
+		fmt.Printf("callparts: %#v\n", callparts)
 		return callparts, true
 	}
 	// Remove three or more alphabet-only letter suffix
@@ -179,7 +182,7 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 		unicode.IsUpper([]rune(s)[0]) &&
 		unicode.IsUpper([]rune(s)[1]) &&
 		unicode.IsUpper([]rune(s)[2]) {
-		callparts = callparts[:(p - 1)]
+		callparts = callparts[:p]
 		return callparts, true
 	}
 	// No removal
@@ -190,8 +193,11 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 func RemoveDistractionSuffixes(callparts []string) []string {
 	for {
 		callparts2, f := RemoveDistractionSuffix(callparts)
+		fmt.Printf("RemoveDistractionSuffixes: removed: %t, partlength: %d, callparts: %s\n", f, len(callparts), callparts)
 		if !f {
 			return callparts2
+		} else {
+			callparts = callparts2
 		}
 	}
 }
@@ -322,10 +328,11 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 
-	// TODO: addk-prefix processing here
+	// TODO: add split-prefix processing here
 
 	// Remove Distraction Suffixes
 	callparts = RemoveDistractionSuffixes(callparts)
+	fmt.Printf("truncated callparts: partlength: %d, callparts: %s\n", len(callparts), callparts)
 
 	// TODO: more processing of callsign with slashes
 
