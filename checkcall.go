@@ -327,11 +327,10 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 
-	// CLDMapException and CLDMapZoneException check
+	// CLDMapException check
 	result2, found2 := CheckException(call, qsotime, result1)
-	result3, found3 := CheckZoneException(call, qsotime, result2)
-	if found2 || found3 {
-		return result3, nil
+	if found2 {
+		return result2, nil
 	}
 
 	// If KL7/JJ1BDX form, also check with JJ1BDX/KL7
@@ -339,12 +338,14 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if partlength == 2 {
 		callswapped := callparts[1] + "/" + callparts[0]
 
-		result31, found31 := CheckException(callswapped, qsotime, result3)
-		result32, found32 := CheckZoneException(callswapped, qsotime, result31)
-		if found31 || found32 {
-			return result32, nil
+		result3, found3 := CheckException(callswapped, qsotime, result2)
+		if found3 {
+			return result3, nil
 		}
 	}
+
+	// TODO: CheckZoneException must be executed
+	// after processing in this function
 
 	// TODO: add split-prefix processing here
 
@@ -355,7 +356,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// TODO: more processing of callsign with slashes
 
 	// NOTREACHED
-	return result3, ErrNotReached
+	return result2, ErrNotReached
 }
 
 // Parse a callsign (assuming without slash) and time
@@ -366,9 +367,8 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 	result1 := InitCLDCheckResult()
 
 	result2, found2 := CheckException(call, qsotime, result1)
-	result3, found3 := CheckZoneException(call, qsotime, result2)
-	if found2 || found3 {
-		return result3, nil
+	if found2 {
+		return result2, nil
 	}
 
 	// TODO: extract prefix from a callsign
@@ -380,6 +380,9 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 	prefixdata, _ := CLDMapPrefix[keyprefix]
 	fmt.Printf("prefixdata: %#v\n", prefixdata)
 
+	// TODO: CheckZoneException must be executed
+	// after processing in this function
+
 	// NOTREACHED
-	return result3, nil
+	return result2, nil
 }
