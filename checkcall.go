@@ -6,9 +6,10 @@ import (
 	// "fmt" // for debug only
 	"errors"
 	"regexp"
-	"strconv"
+	// "strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const (
@@ -153,29 +154,44 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 }
 
 var DistractionSuffixes = []string{
-	"/P", "/M/P", "/P/M", "/N", "/A/M",
-	"/2K", "/AE", "/AG", "/EO", "/FF", "/GA", "/GP", "/HQ", "/KT",
-	"/LH", "/LT", "/PM", "/RP", "/SJ", "/SK", "/XA", "/XB", "/XP",
-	"/QRP1W", "/QRP5W", "/Y2K",
+	"P", "MP", "PM", "N", "AM",
+	"2K", "AE", "AG", "EO", "FF", "GA", "GP", "HQ", "KT",
+	"LH", "LT", "PM", "RP", "SJ", "SK", "XA", "XB", "XP",
+	"QRP1W", "QRP5W", "Y2K",
 }
 
 // Remove unnecessary distraction suffix
-func RemoveDistractionSuffix(call string) string {
-	for _, suffix := range DistractionSuffixes {
-		call, _ = strings.CutSuffix(call, suffix)
+func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
+	l := len(callparts)
+	if l < 2 {
+		return callparts, false
 	}
-	// Remove any suffix with three or more alphabets
-	suffixcheck := regexp.MustCompile(`^(.*)(/[A-Z]{3,})$`)
-	s := suffixcheck.FindStringSubmatch(call)
-	call = s[1]
-	return call
+	p := l - 1
+	s := callparts[p]
+	truncate := false
+	for _, suffix := range DistractionSuffixes {
+		if s == suffix {
+			truncate = true
+			break
+		}
+	}
+	// Remove three or more alphabet-only letter suffix
+	if (!truncate) &&
+		((len(s) >= 3) &&
+			unicode.IsUpper([]rune(s)[0]) && unicode.IsUpper([]rune(s)[1]) && unicode.IsUpper([]rune(s)[2])) {
+		truncate = true
+	}
+	if truncate {
+		callparts = callparts[:(p - 1)]
+	}
+	return callparts, truncate
 }
 
 // Remove unnecessary distraction suffix recursively
-func RemoveDistractionSuffixes(call string) string {
+func RemoveDistractionSuffixes(callparts []string) []string {
 	for {
-		call2 := RemoveDistractionSuffix(call)
-		if call2 == call {
+		call2, f := RemoveDistractionSuffix(callparts)
+		if !f {
 			return call2
 		}
 	}
@@ -217,9 +233,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		return result, nil
 	}
 
-	// Remove Distraction Suffixes
-	call = RemoveDistractionSuffixes(call)
-
 	// Split callsign separated by "/" into parts
 	callparts := strings.Split(call, "/")
 	// Check how many parts in the callparts
@@ -234,14 +247,19 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if (partlength == 1) && (callparts[0] == "") {
 		return CheckCallsign0(call, qsotime)
 	}
-	// Treat "/[...]DX0CALL" as malformed
-	if (partlength > 1) && (callparts[0] == "") {
-		return result, ErrMalformedCallsign
+
+	// If a zero-length string in a split part of a callsign is found,
+	// treat it as malformed and exit
+	for _, s := range callparts {
+		if len(s) == 0 {
+			return result, ErrMalformedCallsign
+		}
 	}
-	// Treat "DX0CALL[...]/" as malformed
-	if (partlength > 1) && (callparts[partlength-1] == "") {
-		return result, ErrMalformedCallsign
-	}
+
+	// TODO: add split-prefix processing here
+
+	// Remove Distraction Suffixes
+	callparts = RemoveDistractionSuffixes(callparts)
 
 	// TODO: more processing of callsign with slashes
 
