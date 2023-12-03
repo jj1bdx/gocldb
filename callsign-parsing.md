@@ -4,19 +4,29 @@
 
 * [Mapping of portable callsigns](https://clublog.freshdesk.com/support/solutions/articles/3000065656-mapping-of-portable-callsigns)
 * [Mapping of KG4 Calls](https://clublog.freshdesk.com/support/solutions/articles/3000065658-mapping-of-kg4-calls)
+* [Batch lookups of DXCCs](https://clublog.freshdesk.com/support/solutions/articles/167890-batch-lookups-of-dxccs)
 * [List of other rules](https://clublog.freshdesk.com/support/solutions/folders/3000012296)
 
 ## Rule application sequence
 
 (From up to down)
 
+### Primary/root rules
+
 * Input: a full callsign and the contact time
-* Check maximum length (accept only 16 or less)
+* Check maximum length (accept only 16 or less) and letters in a full callsign (`[0-9A-Z/]` only, no space or others)
   - Reject as an invalid callsign if failed
-* Check letters in a full callsign (`[0-9A-Z/]` only, no space or others)
-  - Reject as an invalid callsign if failed
+* Check if the callsign in in the DXCC-Invalid (CLDMapInvalid) table
+  - If the callsign entry exists, check the contact time
+    - If the time is matched, return as DXCC Invalid entity
+    - If no match is found, do nothing
 * Parse and split parts with slashes (/)
-  - Reject if the parts are four (4) or more (i.e., three (3) or more slashes)
+  - Reject if the parts are four (5) or more (i.e., three (4) or more slashes)
+* If callsign has no slash, invoke zero-slash processing and return
+* If callsign has null part at the top or the end of callsign, reject it 
+
+### Zero-slash processing
+
 * Check if the callsign is in the Exception (CLDMapException) table
   - If the callsign entry exists, check the contact time
     - If the time is matched, use and set the DXCC/CQZ info, as whitelisted
@@ -40,6 +50,9 @@
       - If no match is found, do nothing
     - If no match is found, use a shorter prefix match, then repeat until no match
     - If no prefix in the prefix table is matched, the callsign is invalid
+
+### One-or-more-slash callsign processing
+
 * (Here the remaining callsign contains at least one (1) slash)
 * Check Aeronautical/Maritime Mobile prefix/symbol
   - If found, set the result and exit
