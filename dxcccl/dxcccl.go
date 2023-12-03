@@ -1,5 +1,5 @@
 // dxcc: search callsigns with godxcc library
-// usage: dxcc <callsign>
+// usage: dxcc <callsign> [time]
 
 package main
 
@@ -20,6 +20,11 @@ func main() {
 			"dxcc: search callsigns with godxcc library")
 		fmt.Fprintf(os.Stderr,
 			"Usage: %s callsign [time] \n\n", execname)
+		fmt.Fprintf(os.Stderr,
+			"Time formats:\n"+
+				"    2006-01-02T15:04:05Z (assuming UTC)\n"+
+				"    \"2006-01-02 15:04:05\" (assuming UTC, use doublequote)\n"+
+				"    2006-01-02 (assuming 0000UTC, date only)\n\n")
 		fmt.Fprintf(os.Stderr,
 			"dxcccl: Club Log cty.xml lookup tool\n"+
 				"(c) 2023 Kenji Rikitake, JJ1BDX.\n"+
