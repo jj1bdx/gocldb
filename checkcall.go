@@ -134,7 +134,7 @@ func InZoneExceptionMap(call string, t time.Time) (CLDZoneException, bool) {
 }
 
 // Check if a callsign and a given time is in CLDMapInvalid
-// Returns CLDMapInvalid and bool
+// Returns CLDInvalid and bool
 // If bool is true, the match exists; if false, did not matched
 func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 	exceptions, refexists := CLDMapInvalid[call]
@@ -150,6 +150,24 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 	}
 	// If not found, return so
 	return CLDInvalid{}, false
+}
+
+// Check the longest prefix match of a given prefix in CLDMapPrefix
+// Returns applicable prefix (if "" then not found)
+// If bool is true, e match exists; if false, did not matched
+func SearchPrefixMap(prefix string) string {
+	result := ""
+	ml := 0
+	for p, _ := range CLDMapPrefix {
+		if strings.HasPrefix(prefix, p) {
+			pl := len(p)
+			if pl >= ml {
+				ml = pl
+				result = p
+			}
+		}
+	}
+	return result
 }
 
 var DistractionSuffixes = map[string]bool{
@@ -347,10 +365,20 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { // Result value
 	result1 := InitCLDCheckResult()
 
-	result2, _ := CheckException(call, qsotime, result1)
-	result3, _ := CheckZoneException(call, qsotime, result2)
+	result2, found2 := CheckException(call, qsotime, result1)
+	result3, found3 := CheckZoneException(call, qsotime, result2)
+	if found2 || found3 {
+		return result3, nil
+	}
 
 	// TODO: extract prefix from a callsign
+
+	prefix, suffix := SplitCallsign(call)
+	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
+	keyprefix := SearchPrefixMap(prefix)
+	fmt.Printf("keyprefix: %s\n", keyprefix)
+	prefixdata, _ := CLDMapPrefix[keyprefix]
+	fmt.Printf("prefixdata: %#v\n", prefixdata)
 
 	// NOTREACHED
 	return result3, nil
