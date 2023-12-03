@@ -190,11 +190,22 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 // Remove unnecessary distraction suffix recursively
 func RemoveDistractionSuffixes(callparts []string) []string {
 	for {
-		call2, f := RemoveDistractionSuffix(callparts)
+		callparts2, f := RemoveDistractionSuffix(callparts)
 		if !f {
-			return call2
+			return callparts2
 		}
 	}
+}
+
+// Split prefix and suffix from a callsign-like string
+// Return prefix and (optional) suffix
+func SplitCallsign(call string) (string, string) {
+	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)$`)
+	matches := prefixsuffix.FindStringSubmatch(call)
+	if len(matches) < 3 {
+		return "", ""
+	}
+	return matches[1], matches[2]
 }
 
 // Parse a callsign and time
