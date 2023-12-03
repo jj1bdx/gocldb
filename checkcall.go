@@ -153,11 +153,14 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 	return CLDInvalid{}, false
 }
 
-var DistractionSuffixes = []string{
-	"P", "MP", "PM", "N", "AM",
-	"2K", "AE", "AG", "EO", "FF", "GA", "GP", "HQ", "KT",
-	"LH", "LT", "PM", "RP", "SJ", "SK", "XA", "XB", "XP",
-	"QRP1W", "QRP5W", "Y2K",
+var DistractionSuffixes = map[string]bool{
+	"P": true, "M": true, "N": true, "A": true,
+	"2K": true, "AE": true, "AG": true, "EO": true,
+	"FF": true, "GA": true, "GP": true, "HQ": true,
+	"KT": true, "LH": true, "LT": true, "PM": true,
+	"RP": true, "SJ": true, "SK": true, "XA": true,
+	"XB": true, "XP": true,
+	"QRP1W": true, "QRP5W": true, "Y2K": true,
 }
 
 // Remove unnecessary distraction suffix
@@ -168,23 +171,20 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	}
 	p := l - 1
 	s := callparts[p]
-	truncate := false
-	for _, suffix := range DistractionSuffixes {
-		if s == suffix {
-			truncate = true
-			break
-		}
+	if DistractionSuffixes[s] {
+		callparts = callparts[:(p - 1)]
+		return callparts, true
 	}
 	// Remove three or more alphabet-only letter suffix
-	if (!truncate) &&
-		((len(s) >= 3) &&
-			unicode.IsUpper([]rune(s)[0]) && unicode.IsUpper([]rune(s)[1]) && unicode.IsUpper([]rune(s)[2])) {
-		truncate = true
-	}
-	if truncate {
+	if (len(s) >= 3) &&
+		unicode.IsUpper([]rune(s)[0]) &&
+		unicode.IsUpper([]rune(s)[1]) &&
+		unicode.IsUpper([]rune(s)[2]) {
 		callparts = callparts[:(p - 1)]
+		return callparts, true
 	}
-	return callparts, truncate
+	// No removal
+	return callparts, false
 }
 
 // Remove unnecessary distraction suffix recursively
