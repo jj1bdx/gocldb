@@ -202,6 +202,8 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 		return callparts, true
 	}
 	// Remove three or more alphabet-only letter suffix
+	// TODO: this algorithm is wrong. Use regexp.
+	//       `^[A-Z]{3,}$`
 	if (len(s) >= 3) &&
 		unicode.IsUpper([]rune(s)[0]) &&
 		unicode.IsUpper([]rune(s)[1]) &&
@@ -254,7 +256,8 @@ func CheckException(call string, qsotime time.Time, oldresult CLDCheckResult) (C
 		result.Deleted = CLDMapEntityByAdif[er.Adif].Deleted
 		result.HasRecordException = true
 		result.RecordException = er
-	}
+	} // TODO: add when if not exists
+
 	return result, exists
 }
 
@@ -268,11 +271,8 @@ func CheckZoneException(call string, qsotime time.Time, oldresult CLDCheckResult
 		result.Cqz = zer.Zone
 		result.HasRecordZoneException = true
 		result.RecordZoneException = zer
-	}
+	} // TODO: add when if not exists
 
-	// TODO: extract prefix from a callsign
-
-	// NOTREACHED
 	return result, exists
 }
 
