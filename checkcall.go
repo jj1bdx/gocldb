@@ -9,7 +9,7 @@ import (
 	// "strconv"
 	"strings"
 	"time"
-	"unicode"
+	// "unicode"
 )
 
 const (
@@ -197,19 +197,17 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s ", p, s)
 
 	if DistractionSuffixes[s] {
-		callparts = callparts[:p]
-		fmt.Printf("callparts: %#v\n", callparts)
-		return callparts, true
+		callparts2 := callparts[:p]
+		fmt.Printf("callparts: %#v\n", callparts2)
+		return callparts2, true
 	}
 	// Remove three or more alphabet-only letter suffix
-	// TODO: this algorithm is wrong. Use regexp.
-	//       `^[A-Z]{3,}$`
-	if (len(s) >= 3) &&
-		unicode.IsUpper([]rune(s)[0]) &&
-		unicode.IsUpper([]rune(s)[1]) &&
-		unicode.IsUpper([]rune(s)[2]) {
-		callparts = callparts[:p]
-		return callparts, true
+	threealphas := regexp.MustCompile(`^[A-Z]{3,}$`)
+	// If not, return with malformed callsign error
+	if threealphas.MatchString(s) {
+		callparts2 := callparts[:p]
+		fmt.Printf("callparts: %#v\n", callparts2)
+		return callparts2, true
 	}
 	// No removal
 	return callparts, false
