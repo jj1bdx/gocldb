@@ -163,7 +163,7 @@ func InPrefixMap(prefix string, t time.Time) (string, CLDPrefix, bool) {
 	matched := make(map[int]string, 4)
 	ml := 0
 	// Search all map entries for matched prefixes
-	for p, _ := range CLDMapPrefix {
+	for p := range CLDMapPrefix {
 		if strings.HasPrefix(prefix, p) {
 			pl := len(p)
 			matched[pl] = p
@@ -263,7 +263,7 @@ func CheckException(call string, qsotime time.Time, oldresult CLDCheckResult) (C
 
 	// Check CLDMapException here
 	er, exists := InExceptionMap(call, qsotime)
-	// If exists, return as an DXCC-invalid callsign
+	// If exists, return the result in the database
 	if exists {
 		result.Adif = er.Adif
 		result.Name = er.Entity
@@ -275,7 +275,9 @@ func CheckException(call string, qsotime time.Time, oldresult CLDCheckResult) (C
 		result.Deleted = CLDMapEntityByAdif[er.Adif].Deleted
 		result.HasRecordException = true
 		result.RecordException = er
-	} // TODO: add when if not exists
+	} else {
+		result.HasRecordException = false
+	}
 
 	return result, exists
 }
@@ -290,7 +292,9 @@ func CheckZoneException(call string, qsotime time.Time, oldresult CLDCheckResult
 		result.Cqz = zer.Zone
 		result.HasRecordZoneException = true
 		result.RecordZoneException = zer
-	} // TODO: add when if not exists
+	} else {
+		result.HasRecordZoneException = false
+	}
 
 	return result, exists
 }
@@ -365,12 +369,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 		result3, found3 := CheckException(callswapped, qsotime, result2)
 		if found3 {
-			return result3, nil
+			return PostCheckCallsign(call, qsotime, result3)
 		}
 	}
-
-	// TODO: CheckZoneException must be executed
-	// after processing in this function
 
 	// TODO: add split-prefix processing here
 
@@ -388,12 +389,14 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 // with given callsign and contact/QSO time
 // Note well: callsign must be uppercased
 
-func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { // Result value
+func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
+	// Result value
 	result1 := InitCLDCheckResult()
 
+	// Check Exception database and if found use it
 	result2, found2 := CheckException(call, qsotime, result1)
 	if found2 {
-		return result2, nil
+		return PostCheckCallsign(call, qsotime, result2)
 	}
 
 	// Extract prefix from a callsign
@@ -416,14 +419,20 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 
 	// whitelisted = CLDMapEntityByAdif[adif].Whitelist
 
+	return PostCheckCallsign(call, qsotime, result1)
+}
+
+// Post-process Callsign check
+func PostCheckCallsign(call string, qsotime time.Time, oldresult CLDCheckResult) (CLDCheckResult, error) {
+
 	// CLDMapException check
-	result2, found2 = CheckZoneException(call, qsotime, result1)
+	result2, found2 := CheckZoneException(call, qsotime, oldresult)
 
 	var result3 CLDCheckResult
 	if found2 {
 		result3 = result2
 	} else {
-		result3 = result1
+		result3 = oldresult
 	}
 
 	// NOTREACHED
