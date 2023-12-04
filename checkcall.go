@@ -152,18 +152,19 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 	return CLDInvalid{}, false
 }
 
-// Check the longest prefix match of a given prefix in CLDMapPrefix
+// Check the longest prefix match
+// of a given prefix in CLDMapPrefixNoSlash
 // Returns the matched prefix, corresponding CLDPrefix, and bool
 // If bool is true, the match exists; if false, did not matched
 // How to search:
 // You need to scan and list all the possible prefixes
 // and look them up from the longer to the shorter ones
 // to find the longest matched prefix with the time range matching
-func InPrefixMap(prefix string, t time.Time) (string, CLDPrefix, bool) {
+func InPrefixMapNoSlash(prefix string, t time.Time) (string, CLDPrefix, bool) {
 	matched := make(map[int]string, 4)
 	ml := 0
 	// Search all map entries for matched prefixes
-	for p := range CLDMapPrefix {
+	for p := range CLDMapPrefixNoSlash {
 		if strings.HasPrefix(prefix, p) {
 			pl := len(p)
 			matched[pl] = p
@@ -403,8 +404,8 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	prefix, suffix := SplitCallsign(call)
 	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
 
-	// Find a longest valid prefix in the CLDMapPrefix
-	mp, mpm, found := InPrefixMap(prefix, qsotime)
+	// Find a longest valid prefix in the CLDMapPrefixNoSlash
+	mp, mpm, found := InPrefixMapNoSlash(prefix, qsotime)
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	adif := mpm.Adif
