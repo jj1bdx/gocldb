@@ -69,16 +69,17 @@ func main() {
 		log.Printf("CheckCallsign() error: %v", err)
 	}
 
-	fmt.Printf("Callsign:       %s\n", call)
-	fmt.Printf("QSO Time:       %s\n", qsotime.Format(time.RFC3339))
-	fmt.Printf("Entity Code:    %d\n", result.Adif)
-	fmt.Printf("Entity Name:    %s\n", result.Name)
-	fmt.Printf("Prefix:         %s\n", result.Prefix)
-	fmt.Printf("CQ Zone:        %d\n", result.Cqz)
-	fmt.Printf("Continent:      %s\n", result.Cont)
-	fmt.Printf("Latitude:       %.2f\n", result.Long)
-	fmt.Printf("Longitude:      %.2f\n", result.Lat)
-	fmt.Printf("Deleted:        %t\n", result.Deleted)
+	fmt.Printf("Callsign:    %s\n", call)
+	fmt.Printf("QSO Time:    %s\n", qsotime.Format(time.RFC3339))
+	fmt.Printf("Entity Code: %d\n", result.Adif)
+	fmt.Printf("Entity Name: %s\n", result.Name)
+	fmt.Printf("Prefix:      %s\n", result.Prefix)
+	fmt.Printf("CQ Zone:     %d\n", result.Cqz)
+	fmt.Printf("Continent:   %s\n", result.Cont)
+	fmt.Printf("Latitude:    %.2f\n", result.Long)
+	fmt.Printf("Longitude:   %.2f\n", result.Lat)
+	fmt.Printf("Deleted:     %t\n", result.Deleted)
+	fmt.Printf("Blocked:     %t (by Whitelist)\n", result.BlockedByWhitelist)
 	fmt.Printf("\n")
 
 	return

@@ -418,8 +418,6 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	result1.Lat = mpm.Lat
 	result1.Deleted = CLDMapEntityByAdif[adif].Deleted
 
-	// whitelisted = CLDMapEntityByAdif[adif].Whitelist
-
 	return PostCheckCallsign(call, qsotime, result1)
 }
 
@@ -436,6 +434,18 @@ func PostCheckCallsign(call string, qsotime time.Time, oldresult CLDCheckResult)
 		result3 = oldresult
 	}
 
-	// NOTREACHED
+	me := CLDMapEntityByAdif[result3.Adif]
+	// If whitelisted and within the time range of whitelist
+	// and if not in the Exception database,
+	// then the callsign is BLOCKED and invalidated by the whitelist
+	if me.Whitelist &&
+		TimeInRange(qsotime, me.WhitelistStart, me.WhitelistEnd) &&
+		!result3.HasRecordException {
+		result3.Adif = 0
+		result3.Name = NameInvalid
+		result3.BlockedByWhitelist = true
+		result3.Invalid = true
+	}
+
 	return result3, nil
 }
