@@ -153,27 +153,50 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 }
 
 // Check the longest prefix match of a given prefix in CLDMapPrefix
-// Returns applicable prefix (if "" then not found)
-// If bool is true, e match exists; if false, did not matched
+// Returns applicable CLDPrefix and bool
+// If bool is true, the match exists; if false, did not matched
 
 // TODO:
 // You need to scan and list all the possible prefixes
 // and look them up from the longer to the shorter ones
 // to find the longest matched prefix with the time range matching
 
-func SearchPrefixMap(prefix string) string {
-	result := ""
+func SearchPrefixMap(prefix string, t time.Time) (CLDPrefix, bool) {
+	matched := make(map[int]string, 16)
 	ml := 0
+	// Search all map entries for matched prefixes
 	for p, _ := range CLDMapPrefix {
 		if strings.HasPrefix(prefix, p) {
 			pl := len(p)
-			if pl >= ml {
+			matched[pl] = p
+			if ml < pl {
 				ml = pl
-				result = p
 			}
 		}
 	}
-	return result
+	fmt.Printf("SearchPrefixMap matched: %#v\n", matched)
+	// Sort matched prefixes into longest to shortset order
+	prefixes := make([]string, 0, 16)
+	for i := ml; i > 0; i-- {
+		p, exists := matched[i]
+		if exists {
+			prefixes = append(prefixes, p)
+		}
+	}
+	fmt.Printf("SearchPrefixMap prefixes: %#v\n", prefixes)
+	// Search if a matched time entry exists in a prefix
+	// and if exists return the result
+	for _, p := range prefixes {
+		entry := CLDMapPrefix[p]
+		for _, s := range entry {
+			if TimeInRange(t, s.Start, s.End) {
+				fmt.Printf("SearchPrefixMap s: %#v\n", s)
+				return s, true
+			}
+		}
+	}
+	fmt.Printf("SearchPrefixMap unable to match prefix\n")
+	return CLDPrefix{}, false
 }
 
 var DistractionSuffixes = map[string]bool{
@@ -379,10 +402,8 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 
 	prefix, suffix := SplitCallsign(call)
 	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
-	keyprefix := SearchPrefixMap(prefix)
-	fmt.Printf("keyprefix: %s\n", keyprefix)
-	prefixdata, _ := CLDMapPrefix[keyprefix]
-	fmt.Printf("prefixdata: %#v\n", prefixdata)
+	keyprefix, found := SearchPrefixMap(prefix, qsotime)
+	fmt.Printf("keyprefix: %#v, found: %t\n", keyprefix, found)
 
 	// TODO: CheckZoneException must be executed
 	// after processing in this function
