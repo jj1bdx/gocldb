@@ -153,16 +153,14 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 }
 
 // Check the longest prefix match of a given prefix in CLDMapPrefix
-// Returns applicable CLDPrefix and bool
+// Returns the matched prefix, corresponding CLDPrefix, and bool
 // If bool is true, the match exists; if false, did not matched
-
-// TODO:
+// How to search:
 // You need to scan and list all the possible prefixes
 // and look them up from the longer to the shorter ones
 // to find the longest matched prefix with the time range matching
-
-func SearchPrefixMap(prefix string, t time.Time) (CLDPrefix, bool) {
-	matched := make(map[int]string, 16)
+func InPrefixMap(prefix string, t time.Time) (string, CLDPrefix, bool) {
+	matched := make(map[int]string, 4)
 	ml := 0
 	// Search all map entries for matched prefixes
 	for p, _ := range CLDMapPrefix {
@@ -176,7 +174,7 @@ func SearchPrefixMap(prefix string, t time.Time) (CLDPrefix, bool) {
 	}
 	fmt.Printf("SearchPrefixMap matched: %#v\n", matched)
 	// Sort matched prefixes into longest to shortset order
-	prefixes := make([]string, 0, 16)
+	prefixes := make([]string, 0, 8)
 	for i := ml; i > 0; i-- {
 		p, exists := matched[i]
 		if exists {
@@ -191,12 +189,12 @@ func SearchPrefixMap(prefix string, t time.Time) (CLDPrefix, bool) {
 		for _, s := range entry {
 			if TimeInRange(t, s.Start, s.End) {
 				fmt.Printf("SearchPrefixMap s: %#v\n", s)
-				return s, true
+				return p, s, true
 			}
 		}
 	}
 	fmt.Printf("SearchPrefixMap unable to match prefix\n")
-	return CLDPrefix{}, false
+	return "", CLDPrefix{}, false
 }
 
 var DistractionSuffixes = map[string]bool{
@@ -398,16 +396,36 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) { //
 		return result2, nil
 	}
 
-	// TODO: extract prefix from a callsign
-
+	// Extract prefix from a callsign
 	prefix, suffix := SplitCallsign(call)
 	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
-	keyprefix, found := SearchPrefixMap(prefix, qsotime)
-	fmt.Printf("keyprefix: %#v, found: %t\n", keyprefix, found)
 
-	// TODO: CheckZoneException must be executed
-	// after processing in this function
+	// Find a longest valid prefix in the CLDMapPrefix
+	mp, mpm, found := InPrefixMap(prefix, qsotime)
+	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+
+	adif := mpm.Adif
+	result1.Adif = adif
+	result1.Name = mpm.Entity
+	result1.Prefix = mp
+	result1.Cqz = mpm.Cqz
+	result1.Cont = mpm.Cont
+	result1.Long = mpm.Long
+	result1.Lat = mpm.Lat
+	result1.Deleted = CLDMapEntityByAdif[adif].Deleted
+
+	// whitelisted = CLDMapEntityByAdif[adif].Whitelist
+
+	// CLDMapException check
+	result2, found2 = CheckZoneException(call, qsotime, result1)
+
+	var result3 CLDCheckResult
+	if found2 {
+		result3 = result2
+	} else {
+		result3 = result1
+	}
 
 	// NOTREACHED
-	return result2, nil
+	return result3, nil
 }
