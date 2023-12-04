@@ -360,7 +360,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// CLDMapException check
 	result2, found2 := CheckException(call, qsotime, result1)
 	if found2 {
-		return result2, nil
+		return PostCheckCallsign(call, qsotime, result2)
 	}
 
 	// If KL7/JJ1BDX form, also check with JJ1BDX/KL7
@@ -394,7 +394,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 // Parse a callsign (assuming without slash) and time
 // with given callsign and contact/QSO time
 // Note well: callsign must be uppercased
-
 func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Result value
 	result1 := InitCLDCheckResult()
