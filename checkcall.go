@@ -377,10 +377,15 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// TODO: add split-prefix processing here
 
 	// Remove Distraction Suffixes
-	callparts = RemoveDistractionSuffixes(callparts)
-	fmt.Printf("truncated callparts: partlength: %d, callparts: %s\n", len(callparts), callparts)
+	callparts2 := RemoveDistractionSuffixes(callparts)
+	partlength2 := len(callparts2)
+	fmt.Printf("truncated callparts: partlength: %d, callparts: %s\n", partlength2, callparts2)
 
 	// TODO: more processing of callsign with slashes
+
+	if partlength2 == 1 {
+		return CheckCallsign0(callparts2[0], qsotime)
+	}
 
 	// NOTREACHED
 	return result2, ErrNotReached
