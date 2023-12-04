@@ -1,5 +1,5 @@
-// dxcc: search callsigns with godxcc library
-// usage: dxcc <callsign> [time]
+// dxcccl: search callsigns with godxcl library
+// usage: dxcccl <callsign> [time]
 
 package main
 
@@ -78,6 +78,7 @@ func main() {
 	fmt.Printf("Continent:      %s\n", result.Cont)
 	fmt.Printf("Latitude:       %.2f\n", result.Long)
 	fmt.Printf("Longitude:      %.2f\n", result.Lat)
+	fmt.Printf("Deleted:        %t\n", result.Deleted)
 	fmt.Printf("\n")
 
 	return
