@@ -250,16 +250,14 @@ func RemoveDistractionSuffixes(callparts []string) []string {
 }
 
 // Split prefix and suffix from a callsign-like string
-// Return prefix and (optional) suffix
+// Return prefix and suffix
 func SplitCallsign(call string) (string, string) {
 	// Find prefix or prefix + suffix
-	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)?$`)
+	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)$`)
 	matches := prefixsuffix.FindStringSubmatch(call)
 	l := len(matches)
 	if l == 3 {
 		return matches[1], matches[2]
-	} else if l == 2 {
-		return matches[1], ""
 	} else {
 		return "", ""
 	}
@@ -417,60 +415,53 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		return CheckCallsign0(call2, qsotime)
 	}
 
-	// TODO: more processing of callsign with slashes
-
-	// 2-part split callsign cases
-	// Result prefix
+	// Use the first two parts of split callsign
+	// to determine the result prefix
 	rp := ""
-	if partlength2 == 2 {
-		prefix1, suffix1 := SplitCallsign(callparts2[0])
-		fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
-		prefix2, suffix2 := SplitCallsign(callparts2[1])
-		fmt.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
-		// prefix-only (true) or full callsign (false)
-		isprefix1 := len(suffix1) == 0
-		isprefix2 := len(suffix2) == 0
-		if isprefix1 && isprefix2 {
-			// BS7H/KL7 -> KL7, KL7/BS7H -> KL7, JJ1/KL7 -> JJ1
-			if len(prefix1) <= len(prefix2) {
-				rp = prefix1
-			} else {
-				rp = prefix2
-			}
-		} else if isprefix1 {
-			// KL7/JJ1BDX
-			rp = prefix1
-		} else if isprefix2 {
-			// JJ1BDX/KL7
-			rp = prefix2
+	prefix1, suffix1 := SplitCallsign(callparts2[0])
+	fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
+	prefix2, suffix2 := SplitCallsign(callparts2[1])
+	fmt.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
+	// prefix-only (true) or full callsign (false)
+	isprefix1 := len(suffix1) == 0
+	isprefix2 := len(suffix2) == 0
+	if isprefix1 && isprefix2 {
+		// BS7H/KL7 -> KL7, KL7/BS7H -> KL7, JJ1/KL7 -> JJ1
+		if len(prefix1) <= len(prefix2) {
+			rp = callparts2[0]
 		} else {
-			// JJ1BDX/N6BDX
-			if len(callparts2[0]) <= len(callparts2[1]) {
-				rp = prefix1
-			} else {
-				rp = prefix2
-			}
+			rp = callparts2[1]
 		}
-		fmt.Printf("rp: %s\n", rp)
-
-		mp, mpm, found := InPrefixMapNoSlash(rp, qsotime)
-		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
-
-		adif := mpm.Adif
-		result1.Adif = adif
-		result1.Name = mpm.Entity
-		result1.Prefix = mp
-		result1.Cqz = mpm.Cqz
-		result1.Cont = mpm.Cont
-		result1.Long = mpm.Long
-		result1.Lat = mpm.Lat
-		result1.Deleted = CLDMapEntityByAdif[adif].Deleted
-
-		return PostCheckCallsign(call, qsotime, result1)
+	} else if isprefix1 {
+		// KL7/JJ1BDX
+		rp = callparts2[0]
+	} else if isprefix2 {
+		// JJ1BDX/KL7
+		rp = callparts2[1]
+	} else {
+		// JJ1BDX/N6BDX
+		if len(callparts2[0]) <= len(callparts2[1]) {
+			rp = prefix1
+		} else {
+			rp = prefix2
+		}
 	}
+	fmt.Printf("rp: %s\n", rp)
 
-	// NOTREACHED
-	return result2, ErrNotReached
+	mp, mpm, found := InPrefixMapNoSlash(rp, qsotime)
+	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+
+	adif := mpm.Adif
+	result1.Adif = adif
+	result1.Name = mpm.Entity
+	result1.Prefix = mp
+	result1.Cqz = mpm.Cqz
+	result1.Cont = mpm.Cont
+	result1.Long = mpm.Long
+	result1.Lat = mpm.Lat
+	result1.Deleted = CLDMapEntityByAdif[adif].Deleted
+
+	return PostCheckCallsign(call2, qsotime, result1)
 }
 
 // Parse a callsign (assuming without slash) and time
