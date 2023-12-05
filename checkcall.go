@@ -567,6 +567,17 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	mp, mpm, found := InPrefixMapNoSlash(prefix, qsotime)
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
+	// SPECIAL RULE:
+	// For KG4 prefix
+	// if suffix is 2-letter, then it remains Gitmo
+	// else, it's USA
+	if (mp == "KG4") && (len(suffix) != 2) {
+		mp, mpm, found = InPrefixMapNoSlash("K", qsotime)
+		fmt.Printf("KG4 prefix rewrite\n")
+	}
+
+	fmt.Printf("After rewrite: mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+
 	adif := mpm.Adif
 	result1.Adif = adif
 	result1.Name = mpm.Entity
