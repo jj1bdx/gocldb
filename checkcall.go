@@ -199,7 +199,7 @@ func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 }
 
 var DistractionSuffixes = map[string]bool{
-	"P": true, "N": true,
+	"P":  true,
 	"2K": true, "AE": true, "AG": true, "EO": true,
 	"FF": true, "GA": true, "GP": true, "HQ": true,
 	"KT": true, "LH": true, "LT": true, "PM": true,
@@ -555,8 +555,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	} else if isprefix2 {
 		// JJ1BDX/KL7
 		rp = callparts2[1]
-		// SPECIAL RULE: Ignore /M suffix: use first part
-		if rp == "M" {
+		// SPECIAL RULE: Ignore /M or /N suffixes: use first part
+		if (rp == "M") || (rp == "N") {
 			rp = callparts2[0]
 		}
 	} else {
@@ -590,6 +590,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "FR/" + callparts2[1]
 	}
 
+	// SPECIAL RULE: (ZK1 or E5) with (/N or /S)
+	// TODO: Map Incomplete in InPrefixMap for E5/N
+
 	// SPECIAL RULE:
 	// Sardinia:
 	// IS -> IS0
@@ -600,6 +603,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if rp == "IM" {
 		rp = "IM0"
 	}
+
+	// TODO: add non-prefix mapping for E5/N and CE9
 
 	// SPECIAL RULE:
 	// Antarctica: KC4 -> CE9
