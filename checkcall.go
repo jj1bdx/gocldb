@@ -555,6 +555,10 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	} else if isprefix2 {
 		// JJ1BDX/KL7
 		rp = callparts2[1]
+		// SPECIAL RULE: Ignore /M suffix: use first part
+		if rp == "M" {
+			rp = callparts2[0]
+		}
 	} else {
 		// JJ1BDX/N6BDX
 		if len(callparts2[0]) <= len(callparts2[1]) {
