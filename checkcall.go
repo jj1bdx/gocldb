@@ -216,7 +216,7 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	}
 	p := l - 1
 	s := callparts[p]
-	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s ", p, s)
+	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s, ", p, s)
 
 	if DistractionSuffixes[s] {
 		callparts2 := callparts[:p]
@@ -232,6 +232,7 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 		return callparts2, true
 	}
 	// No removal
+	fmt.Printf("no removal, callparts: %#v\n", callparts)
 	return callparts, false
 }
 
@@ -251,12 +252,17 @@ func RemoveDistractionSuffixes(callparts []string) []string {
 // Split prefix and suffix from a callsign-like string
 // Return prefix and (optional) suffix
 func SplitCallsign(call string) (string, string) {
-	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)$`)
+	// Find prefix or prefix + suffix
+	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)?$`)
 	matches := prefixsuffix.FindStringSubmatch(call)
-	if len(matches) < 3 {
+	l := len(matches)
+	if l == 3 {
+		return matches[1], matches[2]
+	} else if l == 2 {
+		return matches[1], ""
+	} else {
 		return "", ""
 	}
-	return matches[1], matches[2]
 }
 
 func CheckException(call string, qsotime time.Time, oldresult CLDCheckResult) (CLDCheckResult, bool) { // Result value
@@ -320,7 +326,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	ir, exists := InInvalidMap(call, qsotime)
 	// If exists, return as an DXCC-invalid callsign
 	if exists {
-		result1.Adif = AdifInvalid
+		result1.Adif = 0
 		result1.Name = NameInvalid
 		result1.Prefix = ""
 		result1.Cqz = 0
@@ -344,7 +350,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	fmt.Printf("partlength: %d, callparts: %#v\n", partlength, callparts)
 
 	// If the callsign does not contain slashes
-	// branch to another function
+	// Use the processing function for zero-slash callsign
 	if partlength == 1 {
 		return CheckCallsign0(call, qsotime)
 	}
@@ -362,12 +368,10 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if found2 {
 		return PostCheckCallsign(call, qsotime, result2)
 	}
-
 	// If KL7/JJ1BDX form, also check with JJ1BDX/KL7
 	// for CLDMapException and CLDMapZoneException
 	if partlength == 2 {
 		callswapped := callparts[1] + "/" + callparts[0]
-
 		result3, found3 := CheckException(callswapped, qsotime, result2)
 		if found3 {
 			return PostCheckCallsign(call, qsotime, result3)
@@ -381,10 +385,88 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	partlength2 := len(callparts2)
 	fmt.Printf("truncated callparts: partlength: %d, callparts: %s\n", partlength2, callparts2)
 
+	// Rebuild reduced callsign from callparts
+	if partlength2 == 0 {
+		return result1, ErrMalformedCallsign
+	}
+	call2 := ""
+	for i := 0; i < (partlength2 - 1); i++ {
+		call2 = call2 + callparts2[i] + "/"
+	}
+	call2 = call2 + callparts2[partlength2-1]
+	fmt.Printf("rebuilt callsign: %s\n", call2)
+
+	// CLDMapException check for the rebuilt callsign again
+	result3, found3 := CheckException(call2, qsotime, result1)
+	if found3 {
+		return PostCheckCallsign(call2, qsotime, result3)
+	}
+	// If KL7/JJ1BDX form, also check with JJ1BDX/KL7
+	// for CLDMapException and CLDMapZoneException
+	if partlength2 == 2 {
+		callswapped2 := callparts2[1] + "/" + callparts2[0]
+		result3, found3 := CheckException(callswapped2, qsotime, result1)
+		if found3 {
+			return PostCheckCallsign(call2, qsotime, result3)
+		}
+	}
+
+	// If the callsign does not contain slashes
+	// Use the processing function for zero-slash callsign
+	if partlength2 == 1 {
+		return CheckCallsign0(call2, qsotime)
+	}
+
 	// TODO: more processing of callsign with slashes
 
-	if partlength2 == 1 {
-		return CheckCallsign0(callparts2[0], qsotime)
+	// 2-part split callsign cases
+	// Result prefix
+	rp := ""
+	if partlength2 == 2 {
+		prefix1, suffix1 := SplitCallsign(callparts2[0])
+		fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
+		prefix2, suffix2 := SplitCallsign(callparts2[1])
+		fmt.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
+		// prefix-only (true) or full callsign (false)
+		isprefix1 := len(suffix1) == 0
+		isprefix2 := len(suffix2) == 0
+		if isprefix1 && isprefix2 {
+			// BS7H/KL7 -> KL7, KL7/BS7H -> KL7, JJ1/KL7 -> JJ1
+			if len(prefix1) <= len(prefix2) {
+				rp = prefix1
+			} else {
+				rp = prefix2
+			}
+		} else if isprefix1 {
+			// KL7/JJ1BDX
+			rp = prefix1
+		} else if isprefix2 {
+			// JJ1BDX/KL7
+			rp = prefix2
+		} else {
+			// JJ1BDX/N6BDX
+			if len(callparts2[0]) <= len(callparts2[1]) {
+				rp = prefix1
+			} else {
+				rp = prefix2
+			}
+		}
+		fmt.Printf("rp: %s\n", rp)
+
+		mp, mpm, found := InPrefixMapNoSlash(rp, qsotime)
+		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+
+		adif := mpm.Adif
+		result1.Adif = adif
+		result1.Name = mpm.Entity
+		result1.Prefix = mp
+		result1.Cqz = mpm.Cqz
+		result1.Cont = mpm.Cont
+		result1.Long = mpm.Long
+		result1.Lat = mpm.Lat
+		result1.Deleted = CLDMapEntityByAdif[adif].Deleted
+
+		return PostCheckCallsign(call, qsotime, result1)
 	}
 
 	// NOTREACHED
