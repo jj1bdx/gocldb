@@ -347,6 +347,55 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	fmt.Printf("partlength: %d, callparts: %#v\n", partlength, callparts)
 
+	// Check Aeronautical Mobile
+	// If any part in the callparts contains "AM"
+	if partlength > 1 {
+		for _, s := range callparts {
+			if s == "AM" {
+				// Aeronautical Mobile Callsign
+				result1.Adif = 0
+				result1.Name = NameAeronauticalMobile
+				result1.Prefix = ""
+				result1.Cqz = 0
+				result1.Cont = ""
+				result1.Long = 0.0
+				result1.Lat = 0.0
+				result1.Deleted = false
+				result1.BlockedByWhitelist = false
+				result1.Invalid = true
+				result1.HasRecordInvalid = true
+				result1.RecordInvalid = ir
+
+				return result1, nil
+			}
+		}
+	}
+
+	// Check Maritime Mobile
+	// (If second or later part in the callparts contains "MM[0-9]?")
+	// exception: if the first part contains "MM[0-9]?", that is Scotland
+	mmcheck := regexp.MustCompile(`^MM[0-9]?$`)
+	for i := 1; i < partlength; i++ {
+		s := callparts[i]
+		if mmcheck.MatchString(s) {
+			// Maritime Mobile Callsign
+			result1.Adif = 0
+			result1.Name = NameMaritimeMobile
+			result1.Prefix = ""
+			result1.Cqz = 0
+			result1.Cont = ""
+			result1.Long = 0.0
+			result1.Lat = 0.0
+			result1.Deleted = false
+			result1.BlockedByWhitelist = false
+			result1.Invalid = true
+			result1.HasRecordInvalid = true
+			result1.RecordInvalid = ir
+
+			return result1, nil
+		}
+	}
+
 	// If the callsign does not contain slashes
 	// Use the processing function for zero-slash callsign
 	if partlength == 1 {
