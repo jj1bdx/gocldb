@@ -199,7 +199,7 @@ func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 }
 
 var DistractionSuffixes = map[string]bool{
-	"P": true, "M": true, "N": true, "A": true,
+	"P": true, "N": true,
 	"2K": true, "AE": true, "AG": true, "EO": true,
 	"FF": true, "GA": true, "GP": true, "HQ": true,
 	"KT": true, "LH": true, "LT": true, "PM": true,
@@ -218,6 +218,7 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	s := callparts[p]
 	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s, ", p, s)
 
+	// Remove single suffix in the list
 	if DistractionSuffixes[s] {
 		callparts2 := callparts[:p]
 		fmt.Printf("callparts: %#v\n", callparts2)
@@ -237,6 +238,19 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 		callparts2 := callparts[:p]
 		fmt.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
+	}
+	// Remove "/M/P", "/P/M", "/A/M"
+	if l >= 3 {
+		p2 := l - 2
+		s2 := callparts[p2]
+		fmt.Printf("RemoveDistractionSuffix: p2: %d, s2: %s, ", p2, s2)
+		if ((s == "M") && (s2 == "P")) ||
+			((s == "P") && (s2 == "M")) ||
+			((s == "A") && (s2 == "M")) {
+			callparts2 := callparts[:p2]
+			fmt.Printf("callparts: %#v\n", callparts2)
+			return callparts2, true
+		}
 	}
 	// No removal
 	fmt.Printf("no removal, callparts: %#v\n", callparts)
