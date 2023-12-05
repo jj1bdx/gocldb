@@ -160,11 +160,11 @@ func InInvalidMap(call string, t time.Time) (CLDInvalid, bool) {
 // You need to scan and list all the possible prefixes
 // and look them up from the longer to the shorter ones
 // to find the longest matched prefix with the time range matching
-func InPrefixMapNoSlash(call string, t time.Time) (string, CLDPrefix, bool) {
+func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 	matched := make(map[int]string, 4)
 	ml := 0
 	// Search all map entries for matched prefixes
-	for p := range CLDMapPrefixNoSlash {
+	for p := range CLDMapPrefix {
 		if strings.HasPrefix(call, p) {
 			pl := len(p)
 			matched[pl] = p
@@ -173,7 +173,7 @@ func InPrefixMapNoSlash(call string, t time.Time) (string, CLDPrefix, bool) {
 			}
 		}
 	}
-	fmt.Printf("SearchPrefixMap matched: %#v\n", matched)
+	fmt.Printf("InPrefixMap matched: %#v\n", matched)
 	// Sort matched prefixes into longest to shortset order
 	prefixes := make([]string, 0, 8)
 	for i := ml; i > 0; i-- {
@@ -182,19 +182,19 @@ func InPrefixMapNoSlash(call string, t time.Time) (string, CLDPrefix, bool) {
 			prefixes = append(prefixes, p)
 		}
 	}
-	fmt.Printf("SearchPrefixMap prefixes: %#v\n", prefixes)
+	fmt.Printf("InPrefixMap prefixes: %#v\n", prefixes)
 	// Search if a matched time entry exists in a prefix
 	// and if exists return the result
 	for _, p := range prefixes {
 		entry := CLDMapPrefix[p]
 		for _, s := range entry {
 			if TimeInRange(t, s.Start, s.End) {
-				fmt.Printf("SearchPrefixMap s: %#v\n", s)
+				fmt.Printf("InPrefixMap s: %#v\n", s)
 				return p, s, true
 			}
 		}
 	}
-	fmt.Printf("SearchPrefixMap unable to match prefix\n")
+	fmt.Printf("InPrefixMap unable to match prefix\n")
 	return "", CLDPrefix{}, false
 }
 
@@ -557,6 +557,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "TK"
 	}
 
+	// SPECIAL RULE: 3D2 with /R or /C
+	// if strings.HasPrefix(prefix1, "3D2") &&
+
 	// SPECIAL RULE:
 	// Sardinia:
 	// IS -> IS0
@@ -576,7 +579,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	fmt.Printf("rp after rewrite: %s\n", rp)
 
-	mp, mpm, found := InPrefixMapNoSlash(rp, qsotime)
+	mp, mpm, found := InPrefixMap(rp, qsotime)
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	adif := mpm.Adif
@@ -610,7 +613,7 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
 
 	// Find a longest valid prefix in the CLDMapPrefixNoSlash
-	mp, mpm, found := InPrefixMapNoSlash(call, qsotime)
+	mp, mpm, found := InPrefixMap(call, qsotime)
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	// SPECIAL RULE:
@@ -618,7 +621,7 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// if suffix is 2-letter, then it remains Gitmo
 	// else, it's USA
 	if (mp == "KG4") && (len(suffix) != 2) {
-		mp, mpm, found = InPrefixMapNoSlash("K", qsotime)
+		mp, mpm, found = InPrefixMap("K", qsotime)
 		fmt.Printf("KG4 prefix rewrite\n")
 	}
 
