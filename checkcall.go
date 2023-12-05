@@ -409,6 +409,34 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	// TODO: add split-prefix processing here
 
+	// 3-part-split callsign test
+	// valid cases (check in this respective sequence)
+	//   full-callsign/prefix-part1/prefix-part2
+	//   prefix-part1/full-callsign/prefix-part2
+	//   prefix-part1/prefix-part2/full-callsign
+	if partlength == 3 {
+		rp := ""
+		prefix, suffix := SplitCallsign(callparts[0])
+		if suffix != "" {
+			//   full-callsign/prefix-part1/prefix-part2
+			rp = callparts[1] + "/" + callparts[2]
+		} else {
+			prefix, suffix = SplitCallsign(callparts[1])
+			if suffix != "" {
+				rp = callparts[0] + "/" + callparts[2]
+			} else {
+				prefix, suffix = SplitCallsign(callparts[2])
+				if suffix != "" {
+					rp = callparts[1] + "/" + callparts[2]
+				} else {
+					return result2, ErrMalformedCallsign
+				}
+			}
+		}
+		fmt.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
+		return result2, ErrNotReached
+	}
+
 	// Remove Distraction Suffixes
 	callparts2 := RemoveDistractionSuffixes(callparts)
 	partlength2 := len(callparts2)
@@ -488,8 +516,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if partlength2 == 1 {
 		return CheckCallsign0(call2, qsotime)
 	}
-
-	// TODO: add number-only suffix processing here
 
 	// Use the first two parts of split callsign
 	// to determine the result prefix
