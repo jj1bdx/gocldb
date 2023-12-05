@@ -469,6 +469,15 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 				newcallarea = "0"
 			}
 
+			// SPECIAL RULE: Russian prefix/9:
+			// add "V" to the top of the suffix
+			// so that UA9AA/9 -> UA9VAA, RU9I/9 -> RU9VI
+			// (to Zone 18)
+			if ((newprefix[0] == 'R') || (newprefix[0] == 'U')) &&
+				(newcallarea == "9") {
+				newsuffix = "V" + newsuffix
+			}
+
 			newcall := newprefix + newcallarea + newsuffix
 			return CheckCallsign0(newcall, qsotime)
 		}
