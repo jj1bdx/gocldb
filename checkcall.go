@@ -443,7 +443,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// If the last part of the slash-split callsign
 	// contains only a single digit,
 	// use the digit to replace the call area part of the callsign
-	// Exception: for US Territory callsigns, specify continental US prefix
+	// SPECIAL RULE:
+	// for US Territory callsigns, specify continental US prefix
 
 	if partlength2 == 2 {
 		ls := callparts2[1]
@@ -459,7 +460,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			newprefix := matches[1]
 			newcallarea := rd
 			newsuffix := matches[3]
-			// US prefix rules
+			// SPECIAL RULE: US prefix rules
 			usprefix := regexp.MustCompile(`^[KNW][A-Z]{0,1}$|^A[A-L]$`)
 			if usprefix.MatchString(newprefix) {
 				newprefix = "K"
@@ -509,6 +510,25 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 	fmt.Printf("rp: %s\n", rp)
+
+	// SPECIAL RULE:
+	// Sardinia:
+	// IS -> IS0
+	// IM -> IM0
+	if rp == "IS" {
+		rp = "IS0"
+	}
+	if rp == "IM" {
+		rp = "IM0"
+	}
+
+	// SPECIAL RULE:
+	// Antarctica: KC4 -> CE9
+	if rp == "KC4" {
+		rp = "CE9"
+	}
+
+	fmt.Printf("rp after rewrite: %s\n", rp)
 
 	mp, mpm, found := InPrefixMapNoSlash(rp, qsotime)
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
