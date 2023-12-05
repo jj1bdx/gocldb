@@ -460,11 +460,18 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			newprefix := matches[1]
 			newcallarea := rd
 			newsuffix := matches[3]
+
 			// SPECIAL RULE: US prefix rules
 			usprefix := regexp.MustCompile(`^[KNW][A-Z]{0,1}$|^A[A-L]$`)
 			if usprefix.MatchString(newprefix) {
 				newprefix = "K"
 			}
+
+			// SPECIAL RULE: BS/7 -> BS0 (CHINA), not BS7
+			if (newprefix == "BS") && (newcallarea == "7") {
+				newcallarea = "0"
+			}
+
 			newcall := newprefix + newcallarea + newsuffix
 			return CheckCallsign0(newcall, qsotime)
 		}
