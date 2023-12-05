@@ -557,8 +557,10 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "TK"
 	}
 
-	// SPECIAL RULE: 3D2 with /R or /C
-	// if strings.HasPrefix(prefix1, "3D2") &&
+	// SPECIAL RULE: 3D2 with /C or /S
+	if strings.HasPrefix(prefix1, "3D2") {
+		rp = "3D2/" + callparts2[1]
+	}
 
 	// SPECIAL RULE:
 	// Sardinia:
