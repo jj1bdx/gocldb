@@ -9,7 +9,7 @@ import (
 	// "strconv"
 	"strings"
 	"time"
-	// "unicode"
+	"unicode"
 )
 
 const (
@@ -231,6 +231,13 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 		fmt.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
+	// Remove two or more digit-only letter suffix
+	twodigits := regexp.MustCompile(`^[0-9]{2,}$`)
+	if twodigits.MatchString(s) {
+		callparts2 := callparts[:p]
+		fmt.Printf("callparts: %#v\n", callparts2)
+		return callparts2, true
+	}
 	// No removal
 	fmt.Printf("no removal, callparts: %#v\n", callparts)
 	return callparts, false
@@ -430,6 +437,35 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		result3, found3 := CheckException(callswapped2, qsotime, result1)
 		if found3 {
 			return PostCheckCallsign(call2, qsotime, result3)
+		}
+	}
+
+	// If the last part of the slash-split callsign
+	// contains only a single digit,
+	// use the digit to replace the call area part of the callsign
+	// Exception: for US Territory callsigns, specify continental US prefix
+
+	if partlength2 == 2 {
+		ls := callparts2[1]
+		rd := ""
+		if (len(ls) == 1) && unicode.IsDigit(rune(ls[0])) {
+			rd = ls
+			// Assume the first part is a full callsign
+			prefixnumsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+)([0-9]+)([0-9A-Z]+)$`)
+			matches := prefixnumsuffix.FindStringSubmatch(callparts2[0])
+			if len(matches) < 4 {
+				return result1, ErrMalformedCallsign
+			}
+			newprefix := matches[1]
+			newcallarea := rd
+			newsuffix := matches[3]
+			// US prefix rules
+			usprefix := regexp.MustCompile(`^[KNW][A-Z]{0,1}$|^A[A-L]$`)
+			if usprefix.MatchString(newprefix) {
+				newprefix = "K"
+			}
+			newcall := newprefix + newcallarea + newsuffix
+			return CheckCallsign0(newcall, qsotime)
 		}
 	}
 
