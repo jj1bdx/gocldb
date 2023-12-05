@@ -326,13 +326,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if exists {
 		result1.Adif = 0
 		result1.Name = NameInvalid
-		result1.Prefix = ""
-		result1.Cqz = 0
-		result1.Cont = ""
-		result1.Long = 0.0
-		result1.Lat = 0.0
-		result1.Deleted = false
-		result1.BlockedByWhitelist = false
 		result1.Invalid = true
 		result1.HasRecordInvalid = true
 		result1.RecordInvalid = ir
@@ -355,17 +348,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 				// Aeronautical Mobile Callsign
 				result1.Adif = 0
 				result1.Name = NameAeronauticalMobile
-				result1.Prefix = ""
-				result1.Cqz = 0
-				result1.Cont = ""
-				result1.Long = 0.0
-				result1.Lat = 0.0
-				result1.Deleted = false
-				result1.BlockedByWhitelist = false
 				result1.Invalid = true
-				result1.HasRecordInvalid = true
-				result1.RecordInvalid = ir
-
+				result1.HasRecordInvalid = false
 				return result1, nil
 			}
 		}
@@ -381,17 +365,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			// Maritime Mobile Callsign
 			result1.Adif = 0
 			result1.Name = NameMaritimeMobile
-			result1.Prefix = ""
-			result1.Cqz = 0
-			result1.Cont = ""
-			result1.Long = 0.0
-			result1.Lat = 0.0
-			result1.Deleted = false
-			result1.BlockedByWhitelist = false
 			result1.Invalid = true
-			result1.HasRecordInvalid = true
-			result1.RecordInvalid = ir
-
+			result1.HasRecordInvalid = false
 			return result1, nil
 		}
 	}
@@ -463,6 +438,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	if partlength2 == 1 {
 		return CheckCallsign0(call2, qsotime)
 	}
+
+	// TODO: add number-only suffix processing here
 
 	// Use the first two parts of split callsign
 	// to determine the result prefix
