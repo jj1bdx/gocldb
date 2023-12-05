@@ -443,9 +443,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// If the last part of the slash-split callsign
 	// contains only a single digit,
 	// use the digit to replace the call area part of the callsign
-	// SPECIAL RULE:
-	// for US Territory callsigns, specify continental US prefix
-
 	if partlength2 == 2 {
 		ls := callparts2[1]
 		rd := ""
@@ -492,6 +489,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
 	prefix2, suffix2 := SplitCallsign(callparts2[1])
 	fmt.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
+
 	// prefix-only (true) or full callsign (false)
 	isprefix1 := len(suffix1) == 0
 	isprefix2 := len(suffix2) == 0
@@ -517,6 +515,12 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 	fmt.Printf("rp: %s\n", rp)
+
+	// SPECIAL RULE: TK/2A and TK/2B is CORSICA
+	if strings.HasPrefix(prefix1, "TK") &&
+		((callparts2[1] == "2A") || (callparts2[1] == "2B")) {
+		rp = "TK"
+	}
 
 	// SPECIAL RULE:
 	// Sardinia:
