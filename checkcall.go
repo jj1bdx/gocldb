@@ -421,8 +421,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 
-	// TODO: add split-prefix processing here
-
 	// 3-part-split callsign test
 	// valid cases (check in this respective sequence)
 	//   full-callsign/prefix-part1/prefix-part2
@@ -448,7 +446,21 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			}
 		}
 		fmt.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
-		return result2, ErrNotReached
+		// TODO: more special rules here
+		mp, mpm, found := InPrefixMap(rp, qsotime)
+		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+
+		adif := mpm.Adif
+		result2.Adif = adif
+		result2.Name = mpm.Entity
+		result2.Prefix = mp
+		result2.Cqz = mpm.Cqz
+		result2.Cont = mpm.Cont
+		result2.Long = mpm.Long
+		result2.Lat = mpm.Lat
+		result2.Deleted = CLDMapEntityByAdif[adif].Deleted
+
+		return PostCheckCallsign(call, qsotime, result2)
 	}
 
 	// Remove Distraction Suffixes
