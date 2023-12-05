@@ -439,7 +439,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			} else {
 				prefix, suffix = SplitCallsign(callparts[2])
 				if suffix != "" {
-					rp = callparts[1] + "/" + callparts[2]
+					rp = callparts[0] + "/" + callparts[1]
 				} else {
 					return result2, ErrMalformedCallsign
 				}
@@ -447,6 +447,23 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 		fmt.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
 		// TODO: more special rules here
+
+		// special rules for 3D2, FO, FR are covered with InPrefixMap
+
+		// SPECIAL RULE: JD/M and JD/O
+		// Minami Torishima
+		if rp == "JD/M" {
+			rp = "JD1M"
+		}
+		// Ogasawara
+		if rp == "JD/O" {
+			rp = "JD1"
+		}
+		// SPECIAL RULE: HK0/M for Malpelo
+		if rp == "HK0/M" {
+			rp = "HK0M"
+		}
+
 		mp, mpm, found := InPrefixMap(rp, qsotime)
 		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
@@ -600,6 +617,11 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// SPECIAL RULE: FR with /E, /G, /J, /T
 	if strings.HasPrefix(prefix1, "FR") {
 		rp = "FR/" + callparts2[1]
+	}
+
+	// SPECIAL RULE: HK0/M -> HK0M
+	if strings.HasPrefix(prefix1, "HK0") {
+		rp = "HK0" + callparts2[1]
 	}
 
 	// SPECIAL RULE: (ZK1 or E5) with (/N or /S)
