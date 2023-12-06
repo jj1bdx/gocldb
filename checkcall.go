@@ -198,6 +198,33 @@ func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 	return "", CLDPrefix{}, false
 }
 
+// SPECIAL RULE: E5/N check function for North Cook Islands
+// InPrefixMap-style function but dedicated for E5/N prefix only
+// TODO: extend CLDPrefix map for E5/N
+func E5NPrefixMap(t time.Time) (string, CLDPrefix, bool) {
+	// Use E5 (South Cook Islands)
+	zk1NTime, _ := time.Parse(time.DateTime, "2006-01-01")
+	_, e5Entry, e5Ok := InPrefixMap("E5", t)
+	_, zk1NEntry, zk1NOk := InPrefixMap("ZK1/N", zk1NTime)
+	if !zk1NOk {
+		fmt.Printf("E5NPrefixMap failed to retrieve ZK1/N data\n")
+		return "", CLDPrefix{}, false
+	}
+	if e5Ok {
+		// MANUALLY rewrite for E5/N...
+		// Use ZK1/N as the base Entry
+		e5nEntry := zk1NEntry
+		// Use Start and End members of E5
+		e5nEntry.Start = e5Entry.Start
+		e5nEntry.End = e5Entry.End
+		fmt.Printf("E5NPrefixMap s: %#v\n", e5nEntry)
+		return "E5/N", e5nEntry, true
+	}
+
+	fmt.Printf("E5NPrefixMap unable to match prefix\n")
+	return "", CLDPrefix{}, false
+}
+
 var DistractionSuffixes = map[string]bool{
 	"P":  true,
 	"2K": true, "AE": true, "AG": true, "EO": true,
@@ -446,7 +473,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			}
 		}
 		fmt.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
-		// TODO: more special rules here
 
 		// special rules for 3D2, FO, FR are covered with InPrefixMap
 
@@ -463,8 +489,26 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		if rp == "HK0/M" {
 			rp = "HK0M"
 		}
+		// SPECIAL RULE: ZK1/S
+		if rp == "ZK1/S" {
+			rp = "ZK1"
+		}
+		// SPECIAL RULE: E5/S
+		if rp == "E5/S" {
+			rp = "E5"
+		}
 
-		mp, mpm, found := InPrefixMap(rp, qsotime)
+		fmt.Printf("rp after rewrite: %s\n", rp)
+		var mp string
+		var mpm CLDPrefix
+		var found bool
+		// SPECIAL RULE: E5/N
+		if rp == "E5/N" {
+			mp, mpm, found = E5NPrefixMap(qsotime)
+		} else {
+			// Normal prefix lookup
+			mp, mpm, found = InPrefixMap(rp, qsotime)
+		}
 		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 		adif := mpm.Adif
@@ -562,7 +606,10 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	// Use the first two parts of split callsign
 	// to determine the result prefix
+
+	// rp: reference prefix for InPrefixMap
 	rp := ""
+
 	prefix1, suffix1 := SplitCallsign(callparts2[0])
 	fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
 	prefix2, suffix2 := SplitCallsign(callparts2[1])
@@ -624,8 +671,28 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "HK0" + callparts2[1]
 	}
 
-	// SPECIAL RULE: (ZK1 or E5) with (/N or /S)
-	// TODO: Map Incomplete in InPrefixMap for E5/N
+	// SPECIAL RULE: ZK1/N and ZK1/S
+	if strings.HasPrefix(prefix1, "ZK1") {
+		if callparts2[1] == "N" {
+			// North Cook Islands ZK1/N
+			rp = "ZK1/N"
+		} else {
+			// South Cook Islands ZK1
+			rp = "ZK1"
+		}
+	}
+	// SPECIAL RULE: E5/N and E5/S
+	if strings.HasPrefix(prefix1, "E5") {
+		if callparts2[1] == "N" {
+			// North Cook Islands E5/N
+			// Note: this is NOT in the CLDMapPrefix
+			// so really special treatment has to be applied
+			rp = "E5/N"
+		} else {
+			// South Cook Islands E5
+			rp = "E5"
+		}
+	}
 
 	// SPECIAL RULE:
 	// Sardinia:
@@ -638,8 +705,6 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "IM0"
 	}
 
-	// TODO: add non-prefix mapping for E5/N and CE9
-
 	// SPECIAL RULE:
 	// Antarctica: KC4 -> CE9
 	if rp == "KC4" {
@@ -648,7 +713,16 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	fmt.Printf("rp after rewrite: %s\n", rp)
 
-	mp, mpm, found := InPrefixMap(rp, qsotime)
+	var mp string
+	var mpm CLDPrefix
+	var found bool
+	// SPECIAL RULE for E5/N
+	if rp == "E5/N" {
+		mp, mpm, found = E5NPrefixMap(qsotime)
+	} else {
+		// Normal prefix lookup
+		mp, mpm, found = InPrefixMap(rp, qsotime)
+	}
 	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	adif := mpm.Adif
