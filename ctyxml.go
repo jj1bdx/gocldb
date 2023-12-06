@@ -12,7 +12,6 @@ package gocldb
 
 import (
 	"encoding/xml"
-	// "fmt" // for debug only
 	"io"
 	"log"
 	"os"
@@ -259,15 +258,23 @@ var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
 // Zone exception by callsign, returning a slice
 var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 
+// Logger for debug messages in this package
+var DebugLogger *log.Logger
+
 // Locate cty.xml and open the file,
 // then read all the contents.
 // Set CtyXmlData global variable with the database contents.
+// Set default logger to stderr.
 //
 // Search path:
 //
 //	/usr/local/share/dxcc
 //	and the path where the program resides.
 func LoadCtyXml() {
+	// logger for debugging output
+	DebugLogger = log.New(os.Stderr, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+
+	// Set basedir here
 	basename, err := os.Executable()
 	if err != nil {
 		log.Fatalf("locateCtyXml() basename: %v", err)
@@ -279,7 +286,7 @@ func LoadCtyXml() {
 	_, err = os.Stat(filename)
 	if !os.IsNotExist(err) {
 	} else {
-		// fmt.Printf("locateCtyXml(): %s does not exist\n", filename)
+		DebugLogger.Printf("locateCtyXml(): %s does not exist\n", filename)
 		filename = basedir + "/cty.xml"
 		_, err = os.Stat(filename)
 		if !os.IsNotExist(err) {

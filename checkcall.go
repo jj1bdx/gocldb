@@ -4,9 +4,7 @@ package gocldb
 
 import (
 	"errors"
-	"fmt" // for debug only
 	"regexp"
-	// "strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -173,7 +171,7 @@ func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 			}
 		}
 	}
-	fmt.Printf("InPrefixMap matched: %#v\n", matched)
+	DebugLogger.Printf("InPrefixMap matched: %#v\n", matched)
 	// Sort matched prefixes into longest to shortset order
 	prefixes := make([]string, 0, 8)
 	for i := ml; i > 0; i-- {
@@ -182,19 +180,19 @@ func InPrefixMap(call string, t time.Time) (string, CLDPrefix, bool) {
 			prefixes = append(prefixes, p)
 		}
 	}
-	fmt.Printf("InPrefixMap prefixes: %#v\n", prefixes)
+	DebugLogger.Printf("InPrefixMap prefixes: %#v\n", prefixes)
 	// Search if a matched time entry exists in a prefix
 	// and if exists return the result
 	for _, p := range prefixes {
 		entry := CLDMapPrefix[p]
 		for _, s := range entry {
 			if TimeInRange(t, s.Start, s.End) {
-				fmt.Printf("InPrefixMap s: %#v\n", s)
+				DebugLogger.Printf("InPrefixMap s: %#v\n", s)
 				return p, s, true
 			}
 		}
 	}
-	fmt.Printf("InPrefixMap unable to match prefix\n")
+	DebugLogger.Printf("InPrefixMap unable to match prefix\n")
 	return "", CLDPrefix{}, false
 }
 
@@ -207,7 +205,7 @@ func E5NPrefixMap(t time.Time) (string, CLDPrefix, bool) {
 	_, e5Entry, e5Ok := InPrefixMap("E5", t)
 	_, zk1NEntry, zk1NOk := InPrefixMap("ZK1/N", zk1NTime)
 	if !zk1NOk {
-		fmt.Printf("E5NPrefixMap failed to retrieve ZK1/N data\n")
+		DebugLogger.Printf("E5NPrefixMap failed to retrieve ZK1/N data\n")
 		return "", CLDPrefix{}, false
 	}
 	if e5Ok {
@@ -217,11 +215,11 @@ func E5NPrefixMap(t time.Time) (string, CLDPrefix, bool) {
 		// Use Start and End members of E5
 		e5nEntry.Start = e5Entry.Start
 		e5nEntry.End = e5Entry.End
-		fmt.Printf("E5NPrefixMap s: %#v\n", e5nEntry)
+		DebugLogger.Printf("E5NPrefixMap s: %#v\n", e5nEntry)
 		return "E5/N", e5nEntry, true
 	}
 
-	fmt.Printf("E5NPrefixMap unable to match prefix\n")
+	DebugLogger.Printf("E5NPrefixMap unable to match prefix\n")
 	return "", CLDPrefix{}, false
 }
 
@@ -243,12 +241,12 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	}
 	p := l - 1
 	s := callparts[p]
-	fmt.Printf("RemoveDistractionSuffix: p: %d, s: %s, ", p, s)
+	DebugLogger.Printf("RemoveDistractionSuffix: p: %d, s: %s, ", p, s)
 
 	// Remove single suffix in the list
 	if DistractionSuffixes[s] {
 		callparts2 := callparts[:p]
-		fmt.Printf("callparts: %#v\n", callparts2)
+		DebugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
 	// Remove three or more alphabet-only letter suffix
@@ -256,31 +254,31 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 	// If not, return with malformed callsign error
 	if threealphas.MatchString(s) {
 		callparts2 := callparts[:p]
-		fmt.Printf("callparts: %#v\n", callparts2)
+		DebugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
 	// Remove two or more digit-only letter suffix
 	twodigits := regexp.MustCompile(`^[0-9]{2,}$`)
 	if twodigits.MatchString(s) {
 		callparts2 := callparts[:p]
-		fmt.Printf("callparts: %#v\n", callparts2)
+		DebugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
 	// Remove "/M/P", "/P/M", "/A/M"
 	if l >= 3 {
 		p2 := l - 2
 		s2 := callparts[p2]
-		fmt.Printf("RemoveDistractionSuffix: p2: %d, s2: %s, ", p2, s2)
+		DebugLogger.Printf("RemoveDistractionSuffix: p2: %d, s2: %s, ", p2, s2)
 		if ((s == "M") && (s2 == "P")) ||
 			((s == "P") && (s2 == "M")) ||
 			((s == "A") && (s2 == "M")) {
 			callparts2 := callparts[:p2]
-			fmt.Printf("callparts: %#v\n", callparts2)
+			DebugLogger.Printf("callparts: %#v\n", callparts2)
 			return callparts2, true
 		}
 	}
 	// No removal
-	fmt.Printf("no removal, callparts: %#v\n", callparts)
+	DebugLogger.Printf("no removal, callparts: %#v\n", callparts)
 	return callparts, false
 }
 
@@ -288,7 +286,7 @@ func RemoveDistractionSuffix(callparts []string) ([]string, bool) {
 func RemoveDistractionSuffixes(callparts []string) []string {
 	for {
 		callparts2, f := RemoveDistractionSuffix(callparts)
-		fmt.Printf("RemoveDistractionSuffixes: removed: %t, partlength: %d, callparts: %s\n", f, len(callparts), callparts)
+		DebugLogger.Printf("RemoveDistractionSuffixes: removed: %t, partlength: %d, callparts: %s\n", f, len(callparts), callparts)
 		if !f {
 			return callparts2
 		} else {
@@ -386,7 +384,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Check how many parts in the callparts
 	partlength := len(callparts)
 
-	fmt.Printf("partlength: %d, callparts: %#v\n", partlength, callparts)
+	DebugLogger.Printf("partlength: %d, callparts: %#v\n", partlength, callparts)
 
 	// Check Aeronautical Mobile
 	// If any part in the callparts contains "AM"
@@ -472,7 +470,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 				}
 			}
 		}
-		fmt.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
+		DebugLogger.Printf("rp = %s, prefix = %s, suffix = %s\n", rp, prefix, suffix)
 
 		// special rules for 3D2, FO, FR are covered with InPrefixMap
 
@@ -498,7 +496,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			rp = "E5"
 		}
 
-		fmt.Printf("rp after rewrite: %s\n", rp)
+		DebugLogger.Printf("rp after rewrite: %s\n", rp)
 		var mp string
 		var mpm CLDPrefix
 		var found bool
@@ -509,7 +507,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			// Normal prefix lookup
 			mp, mpm, found = InPrefixMap(rp, qsotime)
 		}
-		fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+		DebugLogger.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 		adif := mpm.Adif
 		result2.Adif = adif
@@ -527,7 +525,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Remove Distraction Suffixes
 	callparts2 := RemoveDistractionSuffixes(callparts)
 	partlength2 := len(callparts2)
-	fmt.Printf("truncated callparts: partlength: %d, callparts: %s\n", partlength2, callparts2)
+	DebugLogger.Printf("truncated callparts: partlength: %d, callparts: %s\n", partlength2, callparts2)
 
 	// Rebuild reduced callsign from callparts
 	if partlength2 == 0 {
@@ -538,7 +536,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		call2 = call2 + callparts2[i] + "/"
 	}
 	call2 = call2 + callparts2[partlength2-1]
-	fmt.Printf("rebuilt callsign: %s\n", call2)
+	DebugLogger.Printf("rebuilt callsign: %s\n", call2)
 
 	// CLDMapException check for the rebuilt callsign again
 	result3, found3 := CheckException(call2, qsotime, result1)
@@ -611,9 +609,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	rp := ""
 
 	prefix1, suffix1 := SplitCallsign(callparts2[0])
-	fmt.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
+	DebugLogger.Printf("prefix1: %s, suffix1: %s\n", prefix1, suffix1)
 	prefix2, suffix2 := SplitCallsign(callparts2[1])
-	fmt.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
+	DebugLogger.Printf("prefix2: %s, suffix2: %s\n", prefix2, suffix2)
 
 	// prefix-only (true) or full callsign (false)
 	isprefix1 := len(suffix1) == 0
@@ -643,7 +641,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			rp = callparts2[1]
 		}
 	}
-	fmt.Printf("rp: %s\n", rp)
+	DebugLogger.Printf("rp: %s\n", rp)
 
 	// SPECIAL RULE: TK/2A and TK/2B is CORSICA
 	if strings.HasPrefix(prefix1, "TK") &&
@@ -711,7 +709,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "CE9"
 	}
 
-	fmt.Printf("rp after rewrite: %s\n", rp)
+	DebugLogger.Printf("rp after rewrite: %s\n", rp)
 
 	var mp string
 	var mpm CLDPrefix
@@ -723,7 +721,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		// Normal prefix lookup
 		mp, mpm, found = InPrefixMap(rp, qsotime)
 	}
-	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+	DebugLogger.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	adif := mpm.Adif
 	result1.Adif = adif
@@ -753,11 +751,11 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 
 	// Extract prefix from a callsign
 	prefix, suffix := SplitCallsign(call)
-	fmt.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
+	DebugLogger.Printf("call: %s, prefix: %s, suffix: %s\n", call, prefix, suffix)
 
 	// Find a longest valid prefix in the CLDMapPrefixNoSlash
 	mp, mpm, found := InPrefixMap(call, qsotime)
-	fmt.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+	DebugLogger.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	// SPECIAL RULE:
 	// For KG4 prefix
@@ -765,10 +763,10 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// else, it's USA
 	if (mp == "KG4") && (len(suffix) != 2) {
 		mp, mpm, found = InPrefixMap("K", qsotime)
-		fmt.Printf("KG4 prefix rewrite\n")
+		DebugLogger.Printf("KG4 prefix rewrite\n")
 	}
 
-	fmt.Printf("After rewrite: mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
+	DebugLogger.Printf("After rewrite: mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
 	adif := mpm.Adif
 	result1.Adif = adif
