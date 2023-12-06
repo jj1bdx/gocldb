@@ -81,6 +81,18 @@ func main() {
 		log.Printf("CheckCallsign() error: %v", err)
 	}
 
+	gocldb.DebugLogger.Printf("\n")
+	gocldb.DebugLogger.Printf("HasRecordException: %t\n", result.HasRecordException)
+	gocldb.DebugLogger.Printf("RecordException: %#v\n", result.RecordException)
+	gocldb.DebugLogger.Printf("HasRecordZoneException: %t\n", result.HasRecordZoneException)
+	gocldb.DebugLogger.Printf("RecordZoneException: %#v\n", result.RecordZoneException)
+	gocldb.DebugLogger.Printf("HasRecordInvalid: %t\n", result.HasRecordInvalid)
+	gocldb.DebugLogger.Printf("RecordInvalid: %#v\n", result.RecordInvalid)
+
+	if *debugmode {
+		fmt.Printf("\n")
+	}
+
 	fmt.Printf("Callsign:    %s\n", call)
 	fmt.Printf("QSO Time:    %s\n", qsotime.Format(time.RFC3339))
 	fmt.Printf("Entity Code: %d\n", result.Adif)
@@ -92,6 +104,7 @@ func main() {
 	fmt.Printf("Longitude:   %.2f\n", result.Lat)
 	fmt.Printf("Deleted:     %t\n", result.Deleted)
 	fmt.Printf("Blocked:     %t (by Whitelist)\n", result.BlockedByWhitelist)
+
 	fmt.Printf("\n")
 
 	return
