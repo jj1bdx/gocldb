@@ -4,8 +4,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/jj1bdx/gocldb"
+	"io"
 	"log"
 	"os"
 	"strings"
@@ -13,38 +15,48 @@ import (
 )
 
 func main() {
-	argc := len(os.Args)
-	Usage := func() {
+
+	var err error
+	// The variable of flag.Bool is stored AFTER flag.Parse() is executed!
+	var debugmode = flag.Bool("d", false, "output debug log if set")
+
+	flag.Usage = func() {
 		execname := os.Args[0]
-		fmt.Fprintln(os.Stderr,
-			"dxcc: search callsigns with godxcc library")
-		fmt.Fprintf(os.Stderr,
-			"Usage: %s callsign [time] \n\n", execname)
-		fmt.Fprintf(os.Stderr,
-			"Time formats:\n"+
-				"    2006-01-02T15:04:05Z (assuming UTC)\n"+
-				"    \"2006-01-02 15:04:05\" (assuming UTC, use doublequote)\n"+
-				"    2006-01-02 (assuming 0000UTC, date only)\n\n")
-		fmt.Fprintf(os.Stderr,
+		fmt.Fprintf(flag.CommandLine.Output(),
 			"dxcccl: Club Log cty.xml lookup tool\n"+
 				"(c) 2023 Kenji Rikitake, JJ1BDX.\n"+
 				"\n")
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"Usage: %s [-d] callsign [time] \n\n", execname)
+		fmt.Fprintf(flag.CommandLine.Output(),
+			"Acceptable time formats:\n"+
+				"    2006-01-02T15:04:05Z (assuming UTC)\n"+
+				"    \"2006-01-02 15:04:05\" (assuming UTC, use doublequote)\n"+
+				"    2006-01-02 (assuming 0000UTC, date only)\n\n")
+		flag.PrintDefaults()
 	}
+
+	flag.Parse()
 
 	gocldb.LoadCtyXml()
 
-	if (argc == 1) || (argc > 3) {
-		Usage()
+	// Disable debug logging
+	if !(*debugmode) {
+		gocldb.DebugLogger.SetOutput(io.Discard)
+	}
+
+	args := flag.Args()
+	narg := flag.NArg()
+	if (narg < 1) || (narg > 2) {
+		flag.Usage()
 		return
 	}
 
-	var err error
-
-	entry := os.Args[1]
+	entry := args[0]
 	call := strings.ToUpper(entry)
 	var qsotime time.Time
-	if argc > 2 {
-		datetime := os.Args[2]
+	if narg > 1 {
+		datetime := args[1]
 		// "2006-01-02T15:04:05Z"
 		qsotime, err = time.Parse(time.RFC3339, datetime)
 		if err != nil {
