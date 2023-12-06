@@ -40,10 +40,7 @@ for the further details to obtain the file.
 
 * ctyxmldump: Dumping cty.xml loaded data as maps
 * dxcccl: search the database with a callsign and optional date/time
-* goadifcldb (TBD): filling in the following entries of ADIF by checking the callsign/datetime pair with the cty.xml database
-  - input: call, qso_date/time_on pair or qso_date_off/time_off pair
-  - output added: country, cont, cqz, dxcc
-  - (Will be moved to [goadiftools](https://github.com/jj1bdx/goadiftools))
+* See goadifdxcccl in [goadiftools](https://github.com/jj1bdx/goadiftools)
 
 ## LICENSE
 
