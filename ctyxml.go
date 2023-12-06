@@ -16,7 +16,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 )
 
@@ -244,14 +243,6 @@ var CLDMapException = make(map[string][]CLDException, 50000)
 // Entity by longest-match prefixes, returning a slice
 var CLDMapPrefix = make(map[string][]CLDPrefix, 10000)
 
-// Entity by longest-match prefixes, returning a slice
-// A subset of CLDMapPrefix, NOT containing "/" in the prefix
-var CLDMapPrefixNoSlash = make(map[string][]CLDPrefix, 10000)
-
-// Entity by longest-match prefixes, returning a slice
-// A subset of CLDMapPrefix, containing one "/" in the prefix
-var CLDMapPrefixWithSlash = make(map[string][]CLDPrefix, 100)
-
 // DXCC-invalid status by callsign, returning a slice
 var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
 
@@ -420,12 +411,10 @@ func LoadCtyXml() {
 		}
 
 		CLDMapPrefix[call] = append(CLDMapPrefix[call], d)
-		if !strings.Contains(call, "/") {
-			CLDMapPrefixNoSlash[call] = append(CLDMapPrefixNoSlash[call], d)
-		} else {
-			CLDMapPrefixWithSlash[call] = append(CLDMapPrefixWithSlash[call], d)
-		}
 	}
+	// SPECIAL RULE:
+	// use 0x10000000 and after for the Record entry
+	// of locally-added CLDMapPrefix entries
 	// SPECIAL RULE: for E5/N CLDPrefix
 	CLDMapPrefix["E5/N"] = append(CLDMapPrefix["E5/N"],
 		CLDPrefix{
