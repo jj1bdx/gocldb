@@ -426,6 +426,20 @@ func LoadCtyXml() {
 			CLDMapPrefixWithSlash[call] = append(CLDMapPrefixWithSlash[call], d)
 		}
 	}
+	// SPECIAL RULE: for E5/N CLDPrefix
+	CLDMapPrefix["E5/N"] = append(CLDMapPrefix["E5/N"],
+		CLDPrefix{
+			// User-defined record number
+			Record: 0x100000000,
+			Entity: "NORTH COOK ISLANDS",
+			Adif:   0xbf,
+			Cqz:    0x20,
+			Cont:   "OC",
+			Long:   -157.97,
+			Lat:    -9,
+			Start:  time.Date(2006, time.July, 1, 0, 0, 0, 0, time.UTC),
+			End:    time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC)},
+	)
 
 	for _, s := range CtyXmlInvalids {
 		var d CLDInvalid
