@@ -80,15 +80,6 @@ func main() {
 	if err != nil {
 		log.Printf("CheckCallsign() error: %v", err)
 	}
-
-	gocldb.DebugLogger.Printf("\n")
-	gocldb.DebugLogger.Printf("HasRecordException: %t\n", result.HasRecordException)
-	gocldb.DebugLogger.Printf("RecordException: %#v\n", result.RecordException)
-	gocldb.DebugLogger.Printf("HasRecordZoneException: %t\n", result.HasRecordZoneException)
-	gocldb.DebugLogger.Printf("RecordZoneException: %#v\n", result.RecordZoneException)
-	gocldb.DebugLogger.Printf("HasRecordInvalid: %t\n", result.HasRecordInvalid)
-	gocldb.DebugLogger.Printf("RecordInvalid: %#v\n", result.RecordInvalid)
-
 	if *debugmode {
 		fmt.Printf("\n")
 	}
@@ -106,7 +97,5 @@ func main() {
 	fmt.Printf("Blocked:     %t (by Whitelist)\n", result.BlockedByWhitelist)
 
 	fmt.Printf("\n")
-
 	return
-
 }
