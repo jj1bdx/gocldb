@@ -268,7 +268,7 @@ func LoadCtyXml() {
 	// Set basedir here
 	basename, err := os.Executable()
 	if err != nil {
-		log.Fatalf("locateCtyXml() basename: %v", err)
+		log.Fatalf("LoadCtyXml() basename: %v", err)
 	}
 	basedir := path.Dir(basename)
 
@@ -277,27 +277,31 @@ func LoadCtyXml() {
 	_, err = os.Stat(filename)
 	if !os.IsNotExist(err) {
 	} else {
-		DebugLogger.Printf("locateCtyXml(): %s does not exist\n", filename)
+		DebugLogger.Printf("LoadCtyXml(): %s does not exist\n", filename)
 		filename = basedir + "/cty.xml"
 		_, err = os.Stat(filename)
 		if !os.IsNotExist(err) {
 		} else {
-			log.Fatalf("locateCtyXml() unable to find cty.xml: %v",
+			log.Fatalf("LoadCtyXml() unable to find cty.xml: %v",
 				err)
 		}
 	}
 
 	fp, err := os.Open(filename)
 	if err != nil {
-		log.Fatalf("locateCtyXml() unable to open %s: %v", filename, err)
+		log.Fatalf("LoadCtyXml() unable to open %s: %v", filename, err)
 	}
 	buf, err := io.ReadAll(fp)
 	if err != nil {
-		log.Fatalf("locateCtyXml() unable to io.ReadAll(): %v", err)
+		log.Fatalf("LoadCtyXml() unable to io.ReadAll(): %v", err)
+	}
+	err = fp.Close()
+	if err != nil {
+		log.Fatalf("LoadCtyXml() unable to close: %v", err)
 	}
 	err = xml.Unmarshal(buf, &CtyXmlData)
 	if err != nil {
-		log.Fatalf("locateCtyXml() unable to xml.Unmarshal(): %v", err)
+		log.Fatalf("LoadCtyXml() unable to xml.Unmarshal(): %v", err)
 	}
 
 	CtyXmlEntities = CtyXmlData.Entities.Entity
