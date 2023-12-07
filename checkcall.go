@@ -448,11 +448,11 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		// special rules for 3D2, FO, FR are covered with InPrefixMap
 
 		// SPECIAL RULE: JD/M and JD/O
-		// Minami Torishima
+		// SPECIAL RULE: Minami Torishima
 		if rp == "JD/M" {
 			rp = "JD1M"
 		}
-		// Ogasawara
+		// SPECIAL RULE: Ogasawara
 		if rp == "JD/O" {
 			rp = "JD1"
 		}
@@ -658,10 +658,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		}
 	}
 
-	// SPECIAL RULE:
-	// Sardinia:
-	// IS -> IS0
-	// IM -> IM0
+	// SPECIAL RULE: Sardinia: IS -> IS0, IM -> IM0
 	if rp == "IS" {
 		rp = "IS0"
 	}
@@ -669,8 +666,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		rp = "IM0"
 	}
 
-	// SPECIAL RULE:
-	// Antarctica: KC4 -> CE9
+	// SPECIAL RULE: Antarctica: KC4 -> CE9
 	if rp == "KC4" {
 		rp = "CE9"
 	}
@@ -718,8 +714,7 @@ func CheckCallsign0(call string, qsotime time.Time) (CLDCheckResult, error) {
 	mp, mpm, found := InPrefixMap(call, qsotime)
 	DebugLogger.Printf("mp: %s, mpm: %#v, found: %t\n", mp, mpm, found)
 
-	// SPECIAL RULE:
-	// For KG4 prefix
+	// SPECIAL RULE: For KG4 prefix
 	// if suffix is 2-letter, then it remains Gitmo
 	// else, it's USA
 	if (mp == "KG4") && (len(suffix) != 2) {

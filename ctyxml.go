@@ -412,7 +412,7 @@ func LoadCtyXml() {
 
 		CLDMapPrefix[call] = append(CLDMapPrefix[call], d)
 	}
-	// SPECIAL RULE:
+	// SPECIAL RULE: locally-added Prefix entries
 	// use 0x10000000 and after for the Record entry
 	// of locally-added CLDMapPrefix entries
 	// SPECIAL RULE: for E5/N CLDPrefix
