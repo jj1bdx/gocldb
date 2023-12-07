@@ -3,12 +3,14 @@
 ## How to use
 
 * Run `gocldb.LoadCtyXml()` to initialize the database
-  - Takes a few seconds to startup
+  - Takes one or two seconds to startup
+  - ~ 200msec on Mac mini 2023 (M2 Pro)
 * The debug log output is *enabled* by default
   - Use `gocldb.DebugLogger.SetOutput(io.Discard)` to disable debug output
 * Use `gocldb.CheckCallsign(call, qsotime)` to search the databse
   - result in `gocldb.CLDCheckResult` format defined in checkcall.go
-* See dxcccl command source code for the basic usage details
+    - Use only the public members of `gocldb.CLDCheckResult`
+* See ctyxmldump and dxcccl command source code for the basic usage details
 
 ## Usage example
 
@@ -19,6 +21,9 @@ gocldb.LoadCtyXml()
 if !(*debugmode) {
   gocldb.DebugLogger.SetOutput(io.Discard)
 }
+// Print version string
+// gocldb.CLDVersionDateTime has the type time.Time 
+fmt.Println(gocldb.CLDVersionDateTime.Format(gocldb.ClublogTimeLayout))
 //...
 // Look up the database
 result, err := gocldb.CheckCallsign(call, qsotime)
