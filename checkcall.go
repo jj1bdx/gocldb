@@ -49,15 +49,13 @@ type CLDCheckResult struct {
 	BlockedByWhitelist bool
 	// True if DXCC-invalid QSO
 	Invalid bool
+	// Private members listed below
 	// CLDException info if applicable
-	HasRecordException bool
-	RecordException    CLDException
+	hasRecordException bool
 	// CLDZoneException info if applicable
-	HasRecordZoneException bool
-	RecordZoneException    CLDZoneException
+	hasRecordZoneException bool
 	// CLDInvalid info if applicable
-	HasRecordInvalid bool
-	RecordInvalid    CLDInvalid
+	hasRecordInvalid bool
 }
 
 // Returns initial state of CLDCheckResult
@@ -73,12 +71,9 @@ func initCLDCheckResult() CLDCheckResult {
 	v.Deleted = false
 	v.BlockedByWhitelist = false
 	v.Invalid = false
-	v.HasRecordException = false
-	v.RecordException = CLDException{}
-	v.HasRecordZoneException = false
-	v.RecordZoneException = CLDZoneException{}
-	v.HasRecordInvalid = false
-	v.RecordInvalid = CLDInvalid{}
+	v.hasRecordException = false
+	v.hasRecordZoneException = false
+	v.hasRecordInvalid = false
 
 	return v
 }
@@ -297,10 +292,10 @@ func checkException(call string, qsotime time.Time, oldresult CLDCheckResult) (C
 		result.Long = er.Long
 		result.Lat = er.Lat
 		result.Deleted = CLDMapEntityByAdif[er.Adif].Deleted
-		result.HasRecordException = true
-		result.RecordException = er
+		result.hasRecordException = true
+		DebugLogger.Printf("checkException: inExceptionMap result: %#v\n", er)
 	} else {
-		result.HasRecordException = false
+		result.hasRecordException = false
 	}
 
 	return result, exists
@@ -314,10 +309,10 @@ func checkZoneException(call string, qsotime time.Time, oldresult CLDCheckResult
 	zer, exists := inZoneExceptionMap(call, qsotime)
 	if exists {
 		result.Cqz = zer.Zone
-		result.HasRecordZoneException = true
-		result.RecordZoneException = zer
+		result.hasRecordZoneException = true
+		DebugLogger.Printf("checkZoneException: inZoneExceptionMap result: %#v\n", zer)
 	} else {
-		result.HasRecordZoneException = false
+		result.hasRecordZoneException = false
 	}
 
 	return result, exists
@@ -346,8 +341,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		result1.Adif = 0
 		result1.Name = NameInvalid
 		result1.Invalid = true
-		result1.HasRecordInvalid = true
-		result1.RecordInvalid = ir
+		result1.hasRecordInvalid = true
+		DebugLogger.Printf("CheckCallsign: inInvalidMap result: %#v\n", ir)
 
 		return result1, nil
 	}
@@ -368,7 +363,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 				result1.Adif = 0
 				result1.Name = NameAeronauticalMobile
 				result1.Invalid = true
-				result1.HasRecordInvalid = false
+				result1.hasRecordInvalid = false
+				DebugLogger.Printf("CheckCallsign: Aeronautical Mobile\n")
 				return result1, nil
 			}
 		}
@@ -385,7 +381,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			result1.Adif = 0
 			result1.Name = NameMaritimeMobile
 			result1.Invalid = true
-			result1.HasRecordInvalid = false
+			result1.hasRecordInvalid = false
+			DebugLogger.Printf("CheckCallsign: Maritime Mobile\n")
 			return result1, nil
 		}
 	}
@@ -756,7 +753,7 @@ func postCheckCallsign(call string, qsotime time.Time, oldresult CLDCheckResult)
 	// then the callsign is BLOCKED and invalidated by the whitelist
 	if me.Whitelist &&
 		timeInRange(qsotime, me.WhitelistStart, me.WhitelistEnd) &&
-		!result3.HasRecordException {
+		!result3.hasRecordException {
 		result3.Adif = 0
 		result3.Name = NameInvalid
 		result3.BlockedByWhitelist = true
