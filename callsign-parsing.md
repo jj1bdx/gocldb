@@ -7,6 +7,10 @@
 * [Batch lookups of DXCCs](https://clublog.freshdesk.com/support/solutions/articles/167890-batch-lookups-of-dxccs)
 * [List of other rules](https://clublog.freshdesk.com/support/solutions/folders/3000012296)
 
+## This document does NOT represent the actual implementation
+
+All the document from here should be rewritten!
+
 ## Rule application sequence
 
 (From up to down)
