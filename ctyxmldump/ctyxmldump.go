@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	// "fmt" // for debug only
 	"github.com/jj1bdx/gocldb"
 )
 
@@ -12,7 +11,7 @@ func main() {
 
 	gocldb.LoadCtyXml()
 
-	fmt.Println(gocldb.CtyXmlData.Date)
+	fmt.Println(gocldb.CLDVersionDateTime.Format(gocldb.ClublogTimeLayout))
 
 	var sl int
 
@@ -85,9 +84,8 @@ func main() {
 
 	fmt.Println("=== List of CLDMapPrefix")
 	sl = 0
-	for k, _ := range gocldb.CLDMapPrefix {
+	for k := range gocldb.CLDMapPrefix {
 		fmt.Printf("%s\n", k)
 	}
 	fmt.Println("=== End of List of CLDMapPrefix")
-
 }

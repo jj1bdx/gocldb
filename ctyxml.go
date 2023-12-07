@@ -40,8 +40,8 @@ func ConvertTimeString(ts TimeString) time.Time {
 
 // XML nested elements begins here
 type Clublog struct {
-	XMLName xml.Name `xml:"clublog"`
-	Date    string   `xml:"date,attr"`
+	XMLName xml.Name   `xml:"clublog"`
+	Date    TimeString `xml:"date,attr"`
 
 	Entities          ClublogEntities          `xml:"entities"`
 	Exceptions        ClublogExceptions        `xml:"exceptions"`
@@ -149,13 +149,14 @@ type ClublogZoneExceptions struct {
 
 // XML nested elements ends here
 
-// Global variables for handling raw XML-based structs
-var CtyXmlData Clublog
-var CtyXmlEntities []EntitiesEntity
-var CtyXmlExceptions []ExceptionsException
-var CtyXmlPrefixes []PrefixesPrefix
-var CtyXmlInvalids []InvalidOperationsInvalid
-var CtyXmlZoneExceptions []ZoneExceptionsZoneException
+// Global variables within the package
+// for handling raw XML-based structs
+var ctyXmlData Clublog
+var ctyXmlEntities []EntitiesEntity
+var ctyXmlExceptions []ExceptionsException
+var ctyXmlPrefixes []PrefixesPrefix
+var ctyXmlInvalids []InvalidOperationsInvalid
+var ctyXmlZoneExceptions []ZoneExceptionsZoneException
 
 // Prefix (string) is the map key
 type CLDEntity struct {
@@ -249,6 +250,9 @@ var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
 // Zone exception by callsign, returning a slice
 var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 
+// Club Log Database release date and time
+var CLDVersionDateTime time.Time
+
 // Logger for debug messages in this package
 var DebugLogger *log.Logger
 
@@ -299,22 +303,24 @@ func LoadCtyXml() {
 	if err != nil {
 		log.Fatalf("LoadCtyXml() unable to close: %v", err)
 	}
-	err = xml.Unmarshal(buf, &CtyXmlData)
+	err = xml.Unmarshal(buf, &ctyXmlData)
 	if err != nil {
 		log.Fatalf("LoadCtyXml() unable to xml.Unmarshal(): %v", err)
 	}
 
-	CtyXmlEntities = CtyXmlData.Entities.Entity
-	CtyXmlExceptions = CtyXmlData.Exceptions.Exception
-	CtyXmlPrefixes = CtyXmlData.Prefixes.Prefix
-	CtyXmlInvalids = CtyXmlData.InvalidOperations.Invalid
-	CtyXmlZoneExceptions = CtyXmlData.ZoneExceptions.ZoneException
+	ctyXmlEntities = ctyXmlData.Entities.Entity
+	ctyXmlExceptions = ctyXmlData.Exceptions.Exception
+	ctyXmlPrefixes = ctyXmlData.Prefixes.Prefix
+	ctyXmlInvalids = ctyXmlData.InvalidOperations.Invalid
+	ctyXmlZoneExceptions = ctyXmlData.ZoneExceptions.ZoneException
 
 	// minimum and maximum time values
-	minTime, _ := time.Parse(ClublogTimeLayout, "0001-01-01T00:00:00+00:00")
-	maxTime, _ := time.Parse(ClublogTimeLayout, "9999-12-31T23:59:59+00:00")
+	minTime := ConvertTimeString(TimeString("0001-01-01T00:00:00+00:00"))
+	maxTime := ConvertTimeString(TimeString("9999-12-31T23:59:59+00:00"))
 
-	for _, s := range CtyXmlEntities {
+	CLDVersionDateTime = ConvertTimeString(ctyXmlData.Date)
+
+	for _, s := range ctyXmlEntities {
 		var d CLDEntity
 		var da CLDEntityByAdif
 
@@ -367,7 +373,7 @@ func LoadCtyXml() {
 		CLDMapEntityByAdif[adif] = da
 	}
 
-	for _, s := range CtyXmlExceptions {
+	for _, s := range ctyXmlExceptions {
 		var d CLDException
 
 		d.Record = s.Record
@@ -392,7 +398,7 @@ func LoadCtyXml() {
 		CLDMapException[call] = append(CLDMapException[call], d)
 	}
 
-	for _, s := range CtyXmlPrefixes {
+	for _, s := range ctyXmlPrefixes {
 		var d CLDPrefix
 
 		d.Record = s.Record
@@ -434,7 +440,7 @@ func LoadCtyXml() {
 			End:    time.Date(9999, time.December, 31, 23, 59, 59, 0, time.UTC)},
 	)
 
-	for _, s := range CtyXmlInvalids {
+	for _, s := range ctyXmlInvalids {
 		var d CLDInvalid
 
 		d.Record = s.Record
@@ -453,7 +459,7 @@ func LoadCtyXml() {
 		CLDMapInvalid[call] = append(CLDMapInvalid[call], d)
 	}
 
-	for _, s := range CtyXmlZoneExceptions {
+	for _, s := range ctyXmlZoneExceptions {
 		var d CLDZoneException
 
 		d.Record = s.Record
