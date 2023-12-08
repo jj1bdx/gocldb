@@ -5,8 +5,8 @@
 * Run `gocldb.LoadCtyXml()` to initialize the database
   - Takes one or two seconds to startup
   - ~ 200msec on Mac mini 2023 (M2 Pro)
-* The debug log output is *enabled* by default
-  - Use `gocldb.DebugLogger.SetOutput(io.Discard)` to disable debug output
+* Changed: the debug log output is *discarded* by default
+  - Use `gocldb.DebugLogger.SetOutput(os.Stderr)` to *enable* debug output
 * Use `gocldb.CheckCallsign(call, qsotime)` to search the databse
   - result in `gocldb.CLDCheckResult` format defined in checkcall.go
     - Use only the public members of `gocldb.CLDCheckResult`
@@ -17,9 +17,9 @@
 ```go
 // Initialize the database
 gocldb.LoadCtyXml()
-// Disable debug logging
-if !(*debugmode) {
-  gocldb.DebugLogger.SetOutput(io.Discard)
+// Enable debug logging if needed
+if *debugmode {
+  gocldb.DebugLogger.SetOutput(os.Stderr)
 }
 // Print version string
 // gocldb.CLDVersionDateTime has the type time.Time 
@@ -35,6 +35,9 @@ cty.xml is distributed from Club Log with individual explicit
 permission for each user.
 See [Downloading The Prefixes And Exceptions As XML](https://clublog.freshdesk.com/support/solutions/articles/54902-downloading-the-prefixes-and-exceptions-as-xml)
 for the further details to obtain the file.
+
+Note: use the cty.xml verion 2023-12-07T20:31:25+00:00 or later
+for proper handling of `E5/N` prefix.
 
 ### File search sequence of cty.xml 
 
