@@ -54,3 +54,8 @@ for proper handling of `E5/N` prefix.
 
 MIT
 
+## Acknowledgment
+
+* Michael Wells, G7VJR, for the generous support from Club Log
+
+[End of document]
