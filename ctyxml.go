@@ -27,6 +27,9 @@ type TimeString string
 const (
 	// Layout string for time.Parse()
 	ClublogTimeLayout = "2006-01-02T15:04:05-07:00"
+	// Maximum size readable for ctl.xml in bytes
+	// (current size: ~10M bytes)
+	MaxCtyXmlSize = 50000000
 )
 
 // Convert TimeString to time.Time
@@ -295,7 +298,7 @@ func LoadCtyXml() {
 	if err != nil {
 		log.Fatalf("LoadCtyXml() unable to open %s: %v", filename, err)
 	}
-	buf, err := io.ReadAll(fp)
+	buf, err := io.ReadAll(io.LimitReader(fp, MaxCtyXmlSize))
 	if err != nil {
 		log.Fatalf("LoadCtyXml() unable to io.ReadAll(): %v", err)
 	}
@@ -305,7 +308,7 @@ func LoadCtyXml() {
 	}
 	err = xml.Unmarshal(buf, &ctyXmlData)
 	if err != nil {
-		log.Fatalf("LoadCtyXml() unable to xml.Unmarshal(): %v", err)
+		log.Fatalf("LoadCtyXml() unable to xml.Unmarshal() of size %d: %v", len(buf), err)
 	}
 
 	ctyXmlEntities = ctyXmlData.Entities.Entity
