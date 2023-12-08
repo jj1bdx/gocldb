@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/jj1bdx/gocldb"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -40,9 +39,9 @@ func main() {
 
 	gocldb.LoadCtyXml()
 
-	// Disable debug logging
-	if !(*debugmode) {
-		gocldb.DebugLogger.SetOutput(io.Discard)
+	// Enable debug logging if -d flag is set
+	if *debugmode {
+		gocldb.DebugLogger.SetOutput(os.Stderr)
 	}
 
 	args := flag.Args()

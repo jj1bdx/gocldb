@@ -318,12 +318,16 @@ func checkZoneException(call string, qsotime time.Time, oldresult CLDCheckResult
 	return result, exists
 }
 
+// External API call function
 // Parse a callsign and time
 // with given callsign and contact/QSO time
 // Note well: callsign must be uppercased
 func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Result value
 	result1 := initCLDCheckResult()
+
+	// Print Club Log Database version
+	DebugLogger.Printf("CLDVersionDateTime: %s\n", CLDVersionDateTime.Format(ClublogTimeLayout))
 
 	// Check if callsign consists of
 	// digits, capital letters, and slashes only

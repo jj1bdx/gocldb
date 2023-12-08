@@ -266,8 +266,8 @@ var DebugLogger *log.Logger
 //	/usr/local/share/dxcc
 //	and the path where the program resides.
 func LoadCtyXml() {
-	// logger for debugging output
-	DebugLogger = log.New(os.Stderr, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+	// Set logger for debugging output, to discard as default
+	DebugLogger = log.New(io.Discard, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
 
 	// Set basedir here
 	basename, err := os.Executable()
