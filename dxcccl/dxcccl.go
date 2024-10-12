@@ -90,8 +90,8 @@ func main() {
 	fmt.Printf("Prefix:      %s\n", result.Prefix)
 	fmt.Printf("CQ Zone:     %d\n", result.Cqz)
 	fmt.Printf("Continent:   %s\n", result.Cont)
-	fmt.Printf("Latitude:    %.2f\n", result.Long)
-	fmt.Printf("Longitude:   %.2f\n", result.Lat)
+	fmt.Printf("Longitude:   %.2f\n", result.Long)
+	fmt.Printf("Latitude:    %.2f\n", result.Lat)
 	fmt.Printf("Deleted:     %t\n", result.Deleted)
 	fmt.Printf("Blocked:     %t (by Whitelist)\n", result.BlockedByWhitelist)
 
