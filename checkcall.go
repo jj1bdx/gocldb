@@ -209,6 +209,7 @@ var distractionSuffixes = map[string]bool{
 	"RP": true, "SJ": true, "SK": true, "XA": true,
 	"XB": true, "XP": true,
 	"QRP1W": true, "QRP5W": true, "Y2K": true,
+	"X": true,
 }
 
 // Remove unnecessary distraction suffix
