@@ -82,6 +82,17 @@ func initCLDCheckResult() CLDCheckResult {
 var ErrMalformedCallsign = errors.New("Malformed callsign")
 var ErrNotReached = errors.New("Jumped into unreachable code")
 
+// Package-level compiled regexes (V6: compiled once, not per call)
+var (
+	reCallcheck       = regexp.MustCompile(`^[0-9A-Z/]{1,16}$`)
+	reMMCheck         = regexp.MustCompile(`^MM[0-9]?$`)
+	reThreeAlphas     = regexp.MustCompile(`^[A-Z]{3,}$`)
+	reTwoDigits       = regexp.MustCompile(`^[0-9]{2,}$`)
+	rePrefixSuffix    = regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)$`)
+	rePrefixNumSuffix = regexp.MustCompile(`^([0-9]?[A-Z]+)([0-9]+)([0-9A-Z]+)$`)
+	reUSPrefix        = regexp.MustCompile(`^[KNW][A-Z]{0,1}$|^A[A-L]$`)
+)
+
 // Check if a given time is in the time range
 // between lower and upper (inclusive)
 func timeInRange(t time.Time, lower time.Time, upper time.Time) bool {
@@ -218,16 +229,13 @@ func removeDistractionSuffix(callparts []string) ([]string, bool) {
 		return callparts2, true
 	}
 	// Remove three or more alphabet-only letter suffix
-	threealphas := regexp.MustCompile(`^[A-Z]{3,}$`)
-	// If not, return with malformed callsign error
-	if threealphas.MatchString(s) {
+	if reThreeAlphas.MatchString(s) {
 		callparts2 := callparts[:p]
 		DebugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
 	// Remove two or more digit-only letter suffix
-	twodigits := regexp.MustCompile(`^[0-9]{2,}$`)
-	if twodigits.MatchString(s) {
+	if reTwoDigits.MatchString(s) {
 		callparts2 := callparts[:p]
 		DebugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
@@ -267,8 +275,7 @@ func removeDistractionSuffixes(callparts []string) []string {
 // Return prefix and suffix
 func splitCallsign(call string) (string, string) {
 	// Find prefix or prefix + suffix
-	prefixsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+[0-9]+)([0-9A-Z]+)$`)
-	matches := prefixsuffix.FindStringSubmatch(call)
+	matches := rePrefixSuffix.FindStringSubmatch(call)
 	l := len(matches)
 	if l == 3 {
 		return matches[1], matches[2]
@@ -286,12 +293,14 @@ func checkException(call string, qsotime time.Time, oldresult CLDCheckResult) (C
 	if exists {
 		result.Adif = er.Adif
 		result.Name = er.Entity
-		result.Prefix = CLDMapEntityByAdif[er.Adif].Prefix
+		if me, ok := CLDMapEntityByAdif[er.Adif]; ok {
+			result.Prefix = me.Prefix
+			result.Deleted = me.Deleted
+		}
 		result.Cqz = er.Cqz
 		result.Cont = er.Cont
 		result.Long = er.Long
 		result.Lat = er.Lat
-		result.Deleted = CLDMapEntityByAdif[er.Adif].Deleted
 		result.hasRecordException = true
 		DebugLogger.Printf("checkException: inExceptionMap result: %#v\n", er)
 	} else {
@@ -332,9 +341,8 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Check if callsign consists of
 	// digits, capital letters, and slashes only
 	// from length 1 to 16 characters
-	regcallcheck := regexp.MustCompile(`^[0-9|A-Z|\/]{1,16}$`)
 	// If not, return with malformed callsign error
-	if !(regcallcheck.MatchString(call)) {
+	if !(reCallcheck.MatchString(call)) {
 		return result1, ErrMalformedCallsign
 	}
 
@@ -377,10 +385,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	// Check Maritime Mobile
 	// (If second or later part in the callparts contains "MM[0-9]?")
 	// exception: if the first part contains "MM[0-9]?", that is Scotland
-	mmcheck := regexp.MustCompile(`^MM[0-9]?$`)
 	for i := 1; i < partlength; i++ {
 		s := callparts[i]
-		if mmcheck.MatchString(s) {
+		if reMMCheck.MatchString(s) {
 			// Maritime Mobile Callsign
 			result1.Adif = 0
 			result1.Name = NameMaritimeMobile
@@ -486,7 +493,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		result2.Cont = mpm.Cont
 		result2.Long = mpm.Long
 		result2.Lat = mpm.Lat
-		result2.Deleted = CLDMapEntityByAdif[adif].Deleted
+		if me, ok := CLDMapEntityByAdif[adif]; ok {
+			result2.Deleted = me.Deleted
+		}
 
 		return postCheckCallsign(call, qsotime, result2)
 	}
@@ -531,8 +540,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 		if (len(ls) == 1) && unicode.IsDigit(rune(ls[0])) {
 			rd = ls
 			// Assume the first part is a full callsign
-			prefixnumsuffix := regexp.MustCompile(`^([0-9]?[A-Z]+)([0-9]+)([0-9A-Z]+)$`)
-			matches := prefixnumsuffix.FindStringSubmatch(callparts2[0])
+			matches := rePrefixNumSuffix.FindStringSubmatch(callparts2[0])
 			if len(matches) < 4 {
 				return result1, ErrMalformedCallsign
 			}
@@ -541,8 +549,7 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 			newsuffix := matches[3]
 
 			// SPECIAL RULE: US prefix rules
-			usprefix := regexp.MustCompile(`^[KNW][A-Z]{0,1}$|^A[A-L]$`)
-			if usprefix.MatchString(newprefix) {
+			if reUSPrefix.MatchString(newprefix) {
 				newprefix = "K"
 			}
 
@@ -689,7 +696,9 @@ func CheckCallsign(call string, qsotime time.Time) (CLDCheckResult, error) {
 	result1.Cont = mpm.Cont
 	result1.Long = mpm.Long
 	result1.Lat = mpm.Lat
-	result1.Deleted = CLDMapEntityByAdif[adif].Deleted
+	if me, ok := CLDMapEntityByAdif[adif]; ok {
+		result1.Deleted = me.Deleted
+	}
 
 	return postCheckCallsign(call2, qsotime, result1)
 }
@@ -733,7 +742,9 @@ func checkCallsignZeroSlash(call string, qsotime time.Time) (CLDCheckResult, err
 	result1.Cont = mpm.Cont
 	result1.Long = mpm.Long
 	result1.Lat = mpm.Lat
-	result1.Deleted = CLDMapEntityByAdif[adif].Deleted
+	if me, ok := CLDMapEntityByAdif[adif]; ok {
+		result1.Deleted = me.Deleted
+	}
 
 	return postCheckCallsign(call, qsotime, result1)
 }
@@ -751,11 +762,11 @@ func postCheckCallsign(call string, qsotime time.Time, oldresult CLDCheckResult)
 		result3 = oldresult
 	}
 
-	me := CLDMapEntityByAdif[result3.Adif]
+	me, adifExists := CLDMapEntityByAdif[result3.Adif]
 	// If whitelisted and within the time range of whitelist
 	// and if not in the Exception database,
 	// then the callsign is BLOCKED and invalidated by the whitelist
-	if me.Whitelist &&
+	if adifExists && me.Whitelist &&
 		timeInRange(qsotime, me.WhitelistStart, me.WhitelistEnd) &&
 		!result3.hasRecordException {
 		result3.Adif = 0

@@ -3,13 +3,16 @@ package main
 import (
 	"fmt"
 	"github.com/jj1bdx/gocldb"
+	"log"
 )
 
 // main program for testing loading cty.xml
 
 func main() {
 
-	gocldb.LoadCtyXml()
+	if err := gocldb.LoadCtyXml(); err != nil {
+		log.Fatalf("LoadCtyXml() error: %v", err)
+	}
 
 	fmt.Println(gocldb.CLDVersionDateTime.Format(gocldb.ClublogTimeLayout))
 

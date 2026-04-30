@@ -37,7 +37,9 @@ func main() {
 
 	flag.Parse()
 
-	gocldb.LoadCtyXml()
+	if err := gocldb.LoadCtyXml(); err != nil {
+		log.Fatalf("LoadCtyXml() error: %v", err)
+	}
 
 	// Enable debug logging if -d flag is set
 	if *debugmode {

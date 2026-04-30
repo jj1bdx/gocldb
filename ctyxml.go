@@ -12,10 +12,12 @@ package gocldb
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"log"
 	"os"
-	"path"
+	"path/filepath"
+	"sync"
 	"time"
 )
 
@@ -33,12 +35,12 @@ const (
 )
 
 // Convert TimeString to time.Time
-func ConvertTimeString(ts TimeString) time.Time {
+func ConvertTimeString(ts TimeString) (time.Time, error) {
 	t, err := time.Parse(ClublogTimeLayout, string(ts))
 	if err != nil {
-		log.Fatalf("ConvertTimeString() error: %v", err)
+		return time.Time{}, fmt.Errorf("ConvertTimeString: %w", err)
 	}
-	return t
+	return t, nil
 }
 
 // XML nested elements begins here
@@ -256,28 +258,37 @@ var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 // Club Log Database release date and time
 var CLDVersionDateTime time.Time
 
-// Logger for debug messages in this package
-var DebugLogger *log.Logger
+// Logger for debug messages in this package.
+// Initialized at package level so it is never nil.
+var DebugLogger = log.New(io.Discard, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+
+var loadOnce sync.Once
+var loadErr error
 
 // Locate cty.xml and open the file,
 // then read all the contents.
 // Set CtyXmlData global variable with the database contents.
-// Set default logger to stderr.
 //
 // Search path:
 //
 //	/usr/local/share/dxcc
 //	and the path where the program resides.
-func LoadCtyXml() {
-	// Set logger for debugging output, to discard as default
-	DebugLogger = log.New(io.Discard, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+//
+// Uses sync.Once so it is safe to call from multiple goroutines;
+// subsequent calls return the result of the first call.
+func LoadCtyXml() error {
+	loadOnce.Do(func() {
+		loadErr = loadCtyXmlInternal()
+	})
+	return loadErr
+}
 
-	// Set basedir here
+func loadCtyXmlInternal() error {
 	basename, err := os.Executable()
 	if err != nil {
-		log.Fatalf("LoadCtyXml() basename: %v", err)
+		return fmt.Errorf("LoadCtyXml() basename: %w", err)
 	}
-	basedir := path.Dir(basename)
+	basedir := filepath.Dir(basename)
 
 	var filename string
 	filename = "/usr/local/share/dxcc/cty.xml"
@@ -285,30 +296,29 @@ func LoadCtyXml() {
 	if !os.IsNotExist(err) {
 	} else {
 		DebugLogger.Printf("LoadCtyXml(): %s does not exist\n", filename)
-		filename = basedir + "/cty.xml"
+		filename = filepath.Join(basedir, "cty.xml")
 		_, err = os.Stat(filename)
 		if !os.IsNotExist(err) {
 		} else {
-			log.Fatalf("LoadCtyXml() unable to find cty.xml: %v",
-				err)
+			return fmt.Errorf("LoadCtyXml() unable to find cty.xml: %w", err)
 		}
 	}
 
 	fp, err := os.Open(filename)
 	if err != nil {
-		log.Fatalf("LoadCtyXml() unable to open %s: %v", filename, err)
+		return fmt.Errorf("LoadCtyXml() unable to open %s: %w", filename, err)
 	}
 	buf, err := io.ReadAll(io.LimitReader(fp, MaxCtyXmlSize))
 	if err != nil {
-		log.Fatalf("LoadCtyXml() unable to io.ReadAll(): %v", err)
+		return fmt.Errorf("LoadCtyXml() unable to io.ReadAll(): %w", err)
 	}
 	err = fp.Close()
 	if err != nil {
-		log.Fatalf("LoadCtyXml() unable to close: %v", err)
+		return fmt.Errorf("LoadCtyXml() unable to close: %w", err)
 	}
 	err = xml.Unmarshal(buf, &ctyXmlData)
 	if err != nil {
-		log.Fatalf("LoadCtyXml() unable to xml.Unmarshal() of size %d: %v", len(buf), err)
+		return fmt.Errorf("LoadCtyXml() unable to xml.Unmarshal() of size %d: %w", len(buf), err)
 	}
 
 	ctyXmlEntities = ctyXmlData.Entities.Entity
@@ -317,11 +327,19 @@ func LoadCtyXml() {
 	ctyXmlInvalids = ctyXmlData.InvalidOperations.Invalid
 	ctyXmlZoneExceptions = ctyXmlData.ZoneExceptions.ZoneException
 
-	// minimum and maximum time values
-	minTime := ConvertTimeString(TimeString("0001-01-01T00:00:00+00:00"))
-	maxTime := ConvertTimeString(TimeString("9999-12-31T23:59:59+00:00"))
+	minTime, err := ConvertTimeString(TimeString("0001-01-01T00:00:00+00:00"))
+	if err != nil {
+		return err
+	}
+	maxTime, err := ConvertTimeString(TimeString("9999-12-31T23:59:59+00:00"))
+	if err != nil {
+		return err
+	}
 
-	CLDVersionDateTime = ConvertTimeString(ctyXmlData.Date)
+	CLDVersionDateTime, err = ConvertTimeString(ctyXmlData.Date)
+	if err != nil {
+		return err
+	}
 
 	for _, s := range ctyXmlEntities {
 		var d CLDEntity
@@ -337,23 +355,35 @@ func LoadCtyXml() {
 		d.Long = s.Long
 		d.Lat = s.Lat
 		if len(s.Start) > 0 {
-			d.Start = ConvertTimeString(s.Start)
+			d.Start, err = ConvertTimeString(s.Start)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.Start = minTime
 		}
 		if len(s.End) > 0 {
-			d.End = ConvertTimeString(s.End)
+			d.End, err = ConvertTimeString(s.End)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.End = maxTime
 		}
 		d.Whitelist = s.Whitelist
 		if len(s.WhitelistStart) > 0 {
-			d.WhitelistStart = ConvertTimeString(s.WhitelistStart)
+			d.WhitelistStart, err = ConvertTimeString(s.WhitelistStart)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.WhitelistStart = minTime
 		}
 		if len(s.WhitelistEnd) > 0 {
-			d.WhitelistEnd = ConvertTimeString(s.WhitelistEnd)
+			d.WhitelistEnd, err = ConvertTimeString(s.WhitelistEnd)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.WhitelistEnd = maxTime
 		}
@@ -388,12 +418,18 @@ func LoadCtyXml() {
 		d.Long = s.Long
 		d.Lat = s.Lat
 		if len(s.Start) > 0 {
-			d.Start = ConvertTimeString(s.Start)
+			d.Start, err = ConvertTimeString(s.Start)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.Start = minTime
 		}
 		if len(s.End) > 0 {
-			d.End = ConvertTimeString(s.End)
+			d.End, err = ConvertTimeString(s.End)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.End = maxTime
 		}
@@ -416,12 +452,18 @@ func LoadCtyXml() {
 		d.Long = s.Long
 		d.Lat = s.Lat
 		if len(s.Start) > 0 {
-			d.Start = ConvertTimeString(s.Start)
+			d.Start, err = ConvertTimeString(s.Start)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.Start = minTime
 		}
 		if len(s.End) > 0 {
-			d.End = ConvertTimeString(s.End)
+			d.End, err = ConvertTimeString(s.End)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.End = maxTime
 		}
@@ -435,12 +477,18 @@ func LoadCtyXml() {
 		d.Record = s.Record
 		call := s.Call
 		if len(s.Start) > 0 {
-			d.Start = ConvertTimeString(s.Start)
+			d.Start, err = ConvertTimeString(s.Start)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.Start = minTime
 		}
 		if len(s.End) > 0 {
-			d.End = ConvertTimeString(s.End)
+			d.End, err = ConvertTimeString(s.End)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.End = maxTime
 		}
@@ -455,16 +503,24 @@ func LoadCtyXml() {
 		call := s.Call
 		d.Zone = s.Zone
 		if len(s.Start) > 0 {
-			d.Start = ConvertTimeString(s.Start)
+			d.Start, err = ConvertTimeString(s.Start)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.Start = minTime
 		}
 		if len(s.End) > 0 {
-			d.End = ConvertTimeString(s.End)
+			d.End, err = ConvertTimeString(s.End)
+			if err != nil {
+				return err
+			}
 		} else {
 			d.End = maxTime
 		}
 
 		CLDMapZoneException[call] = append(CLDMapZoneException[call], d)
 	}
+
+	return nil
 }
