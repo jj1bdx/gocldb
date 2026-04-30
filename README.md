@@ -58,4 +58,8 @@ MIT
 
 * Michael Wells, G7VJR, for the generous support from Club Log
 
+## Usage of AI
+
+* Claude Code is used to verify and fix the vulnerabilities of the code.
+
 [End of document]
