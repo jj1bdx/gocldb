@@ -43,7 +43,7 @@ func main() {
 
 	// Enable debug logging if -d flag is set
 	if *debugmode {
-		gocldb.DebugLogger.SetOutput(os.Stderr)
+		gocldb.SetDebugOutput(os.Stderr)
 	}
 
 	args := flag.Args()

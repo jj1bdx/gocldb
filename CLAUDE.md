@@ -73,7 +73,7 @@ Each map value is a `[]CLD*` slice because the same key can have multiple time-b
 Debug output is discarded by default. To enable:
 
 ```go
-gocldb.DebugLogger.SetOutput(os.Stderr)
+gocldb.SetDebugOutput(os.Stderr)
 ```
 
 ## Key constants

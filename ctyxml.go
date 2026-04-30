@@ -236,31 +236,43 @@ type CLDZoneException struct {
 	End    time.Time
 }
 
-// Entity by prefix, returning a slice
+// The six lookup maps below are populated by LoadCtyXml() and must be
+// treated as read-only by callers. Mutating them after LoadCtyXml() returns
+// is not safe: it races with concurrent CheckCallsign() reads and produces
+// inconsistent lookup results.
+
+// Entity by prefix, returning a slice. Read-only after LoadCtyXml().
 var CLDMapEntity = make(map[string][]CLDEntity, 500)
 
-// Entity by adif (Entity code)
-// Each entity code maps to only one Entity
+// Entity by adif (Entity code). Each entity code maps to only one Entity.
+// Read-only after LoadCtyXml().
 var CLDMapEntityByAdif = make(map[uint16]CLDEntityByAdif, 500)
 
-// Entity Exception status by callsign, returning a slice
+// Entity Exception status by callsign, returning a slice. Read-only after LoadCtyXml().
 var CLDMapException = make(map[string][]CLDException, 50000)
 
-// Entity by longest-match prefixes, returning a slice
+// Entity by longest-match prefixes, returning a slice. Read-only after LoadCtyXml().
 var CLDMapPrefix = make(map[string][]CLDPrefix, 10000)
 
-// DXCC-invalid status by callsign, returning a slice
+// DXCC-invalid status by callsign, returning a slice. Read-only after LoadCtyXml().
 var CLDMapInvalid = make(map[string][]CLDInvalid, 10000)
 
-// Zone exception by callsign, returning a slice
+// Zone exception by callsign, returning a slice. Read-only after LoadCtyXml().
 var CLDMapZoneException = make(map[string][]CLDZoneException, 10000)
 
 // Club Log Database release date and time
 var CLDVersionDateTime time.Time
 
-// Logger for debug messages in this package.
-// Initialized at package level so it is never nil.
-var DebugLogger = log.New(io.Discard, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+// Internal debug logger. Unexported so callers cannot reset it to nil
+// (which would re-introduce the V1 nil-pointer panic). Use SetDebugOutput
+// to redirect debug output.
+var debugLogger = log.New(io.Discard, "gocldb-debug ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
+
+// SetDebugOutput redirects this package's debug log output to w.
+// Pass io.Discard to silence debug logging (the default).
+func SetDebugOutput(w io.Writer) {
+	debugLogger.SetOutput(w)
+}
 
 var loadOnce sync.Once
 var loadErr error
@@ -290,31 +302,29 @@ func loadCtyXmlInternal() error {
 	}
 	basedir := filepath.Dir(basename)
 
-	var filename string
-	filename = "/usr/local/share/dxcc/cty.xml"
-	_, err = os.Stat(filename)
-	if !os.IsNotExist(err) {
-	} else {
-		DebugLogger.Printf("LoadCtyXml(): %s does not exist\n", filename)
-		filename = filepath.Join(basedir, "cty.xml")
-		_, err = os.Stat(filename)
-		if !os.IsNotExist(err) {
-		} else {
-			return fmt.Errorf("LoadCtyXml() unable to find cty.xml: %w", err)
-		}
-	}
-
+	// Try the system path first, then fall back to the executable's directory.
+	// Opening directly (rather than Stat-then-Open) avoids a TOCTOU window and
+	// surfaces non-NotExist errors (permissions, I/O) instead of masking them.
+	filename := "/usr/local/share/dxcc/cty.xml"
 	fp, err := os.Open(filename)
-	if err != nil {
-		return fmt.Errorf("LoadCtyXml() unable to open %s: %w", filename, err)
+	if err != nil && os.IsNotExist(err) {
+		debugLogger.Printf("LoadCtyXml(): %s does not exist\n", filename)
+		filename = filepath.Join(basedir, "cty.xml")
+		fp, err = os.Open(filename)
 	}
-	buf, err := io.ReadAll(io.LimitReader(fp, MaxCtyXmlSize))
+	if err != nil {
+		return fmt.Errorf("LoadCtyXml() unable to open cty.xml: %w", err)
+	}
+	defer fp.Close()
+
+	// Read up to MaxCtyXmlSize+1 to detect oversized files explicitly,
+	// rather than letting io.LimitReader silently truncate.
+	buf, err := io.ReadAll(io.LimitReader(fp, MaxCtyXmlSize+1))
 	if err != nil {
 		return fmt.Errorf("LoadCtyXml() unable to io.ReadAll(): %w", err)
 	}
-	err = fp.Close()
-	if err != nil {
-		return fmt.Errorf("LoadCtyXml() unable to close: %w", err)
+	if len(buf) > MaxCtyXmlSize {
+		return fmt.Errorf("LoadCtyXml(): cty.xml exceeds MaxCtyXmlSize (%d bytes)", MaxCtyXmlSize)
 	}
 	err = xml.Unmarshal(buf, &ctyXmlData)
 	if err != nil {
