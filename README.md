@@ -6,7 +6,7 @@
   - Takes one or two seconds to startup
   - ~ 200msec on Mac mini 2023 (M2 Pro)
 * Changed: the debug log output is *discarded* by default
-  - Use `gocldb.DebugLogger.SetOutput(os.Stderr)` to *enable* debug output
+  - Use `gocldb.SetDebugOutput(os.Stderr)` to *enable* debug output
 * Use `gocldb.CheckCallsign(call, qsotime)` to search the databse
   - result in `gocldb.CLDCheckResult` format defined in checkcall.go
     - Use only the public members of `gocldb.CLDCheckResult`
@@ -14,12 +14,14 @@
 
 ## Usage example
 
+* From 0.2.0: make `DebugLogger` unexported and provide a setter: `func SetDebugOutput(w io.Writer)` that calls `DebugLogger.SetOutput(w)`. This preserves the existing `dxcccl.go` use case (`gocldb.DebugLogger.SetOutput(os.Stderr)`) without exposing the variable itself.
+
 ```go
 // Initialize the database
 gocldb.LoadCtyXml()
 // Enable debug logging if needed
 if *debugmode {
-  gocldb.DebugLogger.SetOutput(os.Stderr)
+  gocldb.SetDebugLogger(os.Stderr)
 }
 // Print version string
 // gocldb.CLDVersionDateTime has the type time.Time 
