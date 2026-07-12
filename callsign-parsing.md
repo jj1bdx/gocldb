@@ -190,10 +190,6 @@ holds:
 4. Trailing pair removal (only when at least three parts remain): the last
    two parts together are `/P/M`, `/M/P`, or `/M/A`, in which case both are
    removed at once.
-   (The code comment says `/A/M`, but the implementation matches `/M/A`;
-   plain `/A/M` is nevertheless removed in two single steps because `M`
-   would first have to be a trailing part — in practice a trailing `/M` is
-   *not* in the removal list, see below.)
 
 Note that `M` and `N` as single trailing letters are **not** distraction
 suffixes; they survive removal and are handled later by the two-part

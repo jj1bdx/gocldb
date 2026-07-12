@@ -240,7 +240,7 @@ func removeDistractionSuffix(callparts []string) ([]string, bool) {
 		debugLogger.Printf("callparts: %#v\n", callparts2)
 		return callparts2, true
 	}
-	// Remove "/M/P", "/P/M", "/A/M"
+	// Remove "/M/P", "/P/M", "/M/A"
 	if l >= 3 {
 		p2 := l - 2
 		s2 := callparts[p2]
